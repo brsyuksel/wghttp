@@ -29,7 +29,7 @@ impl<'a> InterfaceManager for InterfaceManagerLibC<'a> {
 
     fn up_device(&self) -> Result<(), InterfaceError> {
         unsafe {
-            DeviceCommand::Up(self.get_device_name().to_owned())
+            DeviceCommand::Up(self.get_device_name())
                 .exec()
                 .map_err(|e| InterfaceError(e))
         }
@@ -41,11 +41,11 @@ impl<'a> InterfaceManager for InterfaceManagerLibC<'a> {
         netmask: &Ipv4Addr,
     ) -> Result<(), InterfaceError> {
         unsafe {
-            DeviceCommand::SetIp(self.get_device_name().to_owned(), ip_addr)
+            DeviceCommand::SetIp(self.get_device_name(), ip_addr)
                 .exec()
                 .map_err(|e| InterfaceError(e))?;
 
-            DeviceCommand::SetNetmask(self.get_device_name().to_owned(), netmask)
+            DeviceCommand::SetNetmask(self.get_device_name(), netmask)
                 .exec()
                 .map_err(|e| InterfaceError(e))
         }
@@ -53,9 +53,9 @@ impl<'a> InterfaceManager for InterfaceManagerLibC<'a> {
 }
 
 enum DeviceCommand<'a> {
-    SetIp(String, &'a Ipv4Addr),
-    SetNetmask(String, &'a Ipv4Addr),
-    Up(String),
+    SetIp(&'a str, &'a Ipv4Addr),
+    SetNetmask(&'a str, &'a Ipv4Addr),
+    Up(&'a str),
 }
 
 impl<'a> DeviceCommand<'a> {
@@ -143,12 +143,12 @@ impl<'a> DeviceCommand<'a> {
         let fd = Self::open_control_socket()?;
 
         let res = match self {
-            Self::Up(dev_name) => Self::up_device(fd, dev_name.as_str()),
+            Self::Up(dev_name) => Self::up_device(fd, dev_name),
             Self::SetIp(dev_name, ip_addr) => {
-                Self::set_ip(fd, dev_name.as_str(), ip_addr.to_string().as_str())
+                Self::set_ip(fd, dev_name, ip_addr.to_string().as_str())
             }
             Self::SetNetmask(dev_name, netmask) => {
-                Self::set_netmask(fd, dev_name.as_str(), netmask.to_string().as_str())
+                Self::set_netmask(fd, dev_name, netmask.to_string().as_str())
             }
         };
 

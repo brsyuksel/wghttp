@@ -87,7 +87,7 @@ mod device_command_tests {
 
     #[test]
     fn up_command_fails_non_existing_device() {
-        let cmd = DeviceCommand::Up("ne0".to_owned());
+        let cmd = DeviceCommand::Up("ne0");
         let res = unsafe { cmd.exec().err() };
         assert_eq!(res, Some("can't get device flags".to_owned()));
     }
@@ -95,7 +95,7 @@ mod device_command_tests {
     #[test]
     fn sets_up_device() {
         test_helper::manage_dev("devcmd0", || {
-            let cmd = DeviceCommand::Up("devcmd0".to_owned());
+            let cmd = DeviceCommand::Up("devcmd0");
             let res = unsafe { cmd.exec().err() };
             assert!(res.is_none());
 
@@ -108,7 +108,7 @@ mod device_command_tests {
     #[test]
     fn fails_setting_ip_non_existing_device() {
         let ip = "10.0.0.1".parse().unwrap();
-        let cmd = DeviceCommand::SetIp("ne0".to_owned(), &ip);
+        let cmd = DeviceCommand::SetIp("ne0", &ip);
         let res = unsafe { cmd.exec().err() };
         assert_eq!(res, Some("can't set ip address for device".to_owned()));
     }
@@ -117,7 +117,7 @@ mod device_command_tests {
     fn sets_ip() {
         test_helper::manage_dev("devcmd1", || {
             let ip = "10.0.0.1".parse().unwrap();
-            let cmd = DeviceCommand::SetIp("devcmd1".to_owned(), &ip);
+            let cmd = DeviceCommand::SetIp("devcmd1", &ip);
             let res = unsafe { cmd.exec().err() };
             assert!(res.is_none());
 
@@ -130,7 +130,7 @@ mod device_command_tests {
     #[test]
     fn fails_setting_netmask_non_existing_device() {
         let netmask = "255.255.255.0".parse().unwrap();
-        let cmd = DeviceCommand::SetNetmask("ne0".to_owned(), &netmask);
+        let cmd = DeviceCommand::SetNetmask("ne0", &netmask);
         let res = unsafe { cmd.exec().err() };
         assert_eq!(res, Some("can't set netmask for device".to_owned()));
     }
@@ -140,8 +140,8 @@ mod device_command_tests {
         test_helper::manage_dev("devcmd2", || {
             let ip = "10.0.0.1".parse().unwrap();
             let netmask = "255.255.255.0".parse().unwrap();
-            let ip_cmd = DeviceCommand::SetIp("devcmd2".to_owned(), &ip);
-            let netmask_cmd = DeviceCommand::SetNetmask("devcmd2".to_owned(), &netmask);
+            let ip_cmd = DeviceCommand::SetIp("devcmd2", &ip);
+            let netmask_cmd = DeviceCommand::SetNetmask("devcmd2", &netmask);
 
             let res = unsafe {
                 let _ = ip_cmd.exec();
