@@ -1,0 +1,7 @@
+[workspace]
+
+members = [
+    "core",
+    "if_mng_libc",
+    "wghttp",
+]
