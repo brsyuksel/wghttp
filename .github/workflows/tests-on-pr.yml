@@ -10,10 +10,11 @@ jobs:
     container:
       image: ubuntu:22.04
       options: --user root
-      env:
-        ACTIONS_ALLOW_UNSECURE_COMMANDS: true
     steps:
       - run: apt-get update && apt-get install wget -y
+
+      - run: |
+          echo "ACTIONS_ALLOW_UNSECURE_COMMANDS=true" >> $GITHUB_ENV
 
       - name: checkout repo
         uses: actions/checkout@v3
