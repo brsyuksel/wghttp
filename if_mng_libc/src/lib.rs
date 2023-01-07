@@ -1,6 +1,6 @@
 use core::if_mng::*;
 use libc;
-use std::mem::MaybeUninit;
+use std::io::Error;
 use std::net::Ipv4Addr;
 
 #[cfg(test)]
@@ -62,7 +62,8 @@ impl<'a> DeviceCommand<'a> {
     unsafe fn open_control_socket() -> Result<i32, String> {
         let s = libc::socket(libc::AF_INET, libc::SOCK_DGRAM, 0);
         if s < 0 {
-            return Err(String::from("control socket problem"));
+            let msg = format!("control socket problem: {}", Error::last_os_error());
+            return Err(msg);
         }
         Ok(s)
     }
@@ -72,68 +73,61 @@ impl<'a> DeviceCommand<'a> {
     }
 
     unsafe fn set_ip(fd: i32, dev_name: &str, ip_addr: &str) -> Result<(), String> {
-        let ifreq = MaybeUninit::<libc::ifreq>::uninit().as_mut_ptr();
-
-        let mut dev_name_arr = [0u8; 16];
-        dev_name_arr[..dev_name.len()].copy_from_slice(dev_name.as_bytes());
-        (*ifreq).ifr_name = dev_name_arr;
+        let ifreq = &mut new_ifreq_for_dev(dev_name);
 
         let ip_sin = libc::sockaddr_in {
             sin_family: libc::AF_INET as u16,
             sin_port: 0,
             sin_addr: libc::in_addr {
-                s_addr: inet_addr(ip_addr.to_owned().as_ptr()),
+                s_addr: inet_addr_for_string(ip_addr.to_owned()),
             },
             sin_zero: [0u8; 8],
         };
         (*ifreq).ifr_ifru.ifru_addr = *(&ip_sin as *const _ as *const libc::sockaddr);
 
         if libc::ioctl(fd, libc::SIOCSIFADDR, ifreq) < 0 {
-            return Err(String::from("can't set ip address for device"));
+            let msg = format!("can't set ip address: {}", Error::last_os_error());
+            return Err(msg);
         }
 
         Ok(())
     }
 
     unsafe fn set_netmask(fd: i32, dev_name: &str, netmask: &str) -> Result<(), String> {
-        let ifreq = MaybeUninit::<libc::ifreq>::uninit().as_mut_ptr();
-
-        let mut dev_name_arr = [0u8; 16];
-        dev_name_arr[..dev_name.len()].copy_from_slice(dev_name.as_bytes());
-        (*ifreq).ifr_name = dev_name_arr;
+        let ifreq = &mut new_ifreq_for_dev(dev_name);
 
         let netmask_sin = libc::sockaddr_in {
             sin_family: libc::AF_INET as u16,
             sin_port: 0,
             sin_addr: libc::in_addr {
-                s_addr: inet_addr(netmask.to_owned().as_ptr()),
+                s_addr: inet_addr_for_string(netmask.to_owned()),
             },
             sin_zero: [0u8; 8],
         };
         (*ifreq).ifr_ifru.ifru_netmask = *(&netmask_sin as *const _ as *const libc::sockaddr);
 
         if libc::ioctl(fd, libc::SIOCSIFNETMASK, ifreq) < 0 {
-            return Err(String::from("can't set netmask for device"));
+            let msg = format!("can't set netmask: {}", Error::last_os_error());
+            return Err(msg);
         }
 
         Ok(())
     }
 
     unsafe fn up_device(fd: i32, dev_name: &str) -> Result<(), String> {
-        let ifreq = MaybeUninit::<libc::ifreq>::uninit().as_mut_ptr();
+        let mut ifreq_get = new_ifreq_for_dev(dev_name);
 
-        let mut dev_name_arr = [0u8; 16];
-        dev_name_arr[..dev_name.len()].copy_from_slice(dev_name.as_bytes());
-        (*ifreq).ifr_name = dev_name_arr;
-
-        if libc::ioctl(fd, libc::SIOCGIFFLAGS, ifreq) < 0 {
-            return Err(String::from("can't get device flags"));
+        if libc::ioctl(fd, libc::SIOCGIFFLAGS, &mut ifreq_get) < 0 {
+            let msg = format!("can't get device flags: {}", Error::last_os_error());
+            return Err(msg);
         }
 
-        (*ifreq).ifr_ifru.ifru_flags |= libc::IFF_UP as i16;
+        let ifreq_set = &mut new_ifreq_for_dev(dev_name);
+        (*ifreq_set).ifr_ifru.ifru_flags = ifreq_get.ifr_ifru.ifru_flags | libc::IFF_UP as i16;
 
-        if libc::ioctl(fd, libc::SIOCSIFFLAGS, ifreq) < 0 {
-            return Err(String::from("can't set device up"));
+        if libc::ioctl(fd, libc::SIOCSIFFLAGS, ifreq_set) < 0 {
+            let msg = format!("can't make device up: {}", Error::last_os_error());
+            return Err(msg);
         }
 
         Ok(())
@@ -155,4 +149,21 @@ impl<'a> DeviceCommand<'a> {
         Self::close_control_socket(fd);
         res
     }
+}
+
+// TODO: portability problem -> arm cpu expects str params as u8 instead of i8.
+unsafe fn new_ifreq_for_dev(dev_name: &str) -> libc::ifreq {
+    let mut dev_name_arr = [0u8; 16];
+    dev_name_arr[..dev_name.len()].copy_from_slice(dev_name.as_bytes());
+    let dev_name_arr_i8 = dev_name_arr.map(|i| i as i8);
+    let ifreq = libc::ifreq {
+        ifr_name: dev_name_arr_i8,
+        ifr_ifru: libc::__c_anonymous_ifr_ifru { ifru_flags: 0 },
+    };
+    ifreq
+}
+
+// TODO: portability problem -> arm cpu expects str params as u8 instead of i8.
+unsafe fn inet_addr_for_string(addr: String) -> libc::in_addr_t {
+    inet_addr(addr.as_ptr() as *const i8)
 }
