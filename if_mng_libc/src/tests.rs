@@ -40,7 +40,10 @@ mod if_mng_tests {
     fn fails_on_up_non_existing_device() {
         let m = InterfaceManagerLibC::new("ne0");
         let res = m.up_device().map_err(|e| e.0).err();
-        assert_eq!(res, Some("can't get device flags: No such device (os error 19)".to_owned()));
+        assert_eq!(
+            res,
+            Some("can't get device flags: No such device (os error 19)".to_owned())
+        );
     }
 
     #[test]
@@ -62,7 +65,10 @@ mod if_mng_tests {
         let ip = "10.0.0.1".parse().unwrap();
         let netmask = "255.255.255.0".parse().unwrap();
         let res = m.set_ip_and_netmask(&ip, &netmask).map_err(|e| e.0).err();
-        assert_eq!(res, Some("can't set ip address: No such device (os error 19)".to_owned()));
+        assert_eq!(
+            res,
+            Some("can't set ip address: No such device (os error 19)".to_owned())
+        );
     }
 
     #[test]
@@ -89,7 +95,10 @@ mod device_command_tests {
     fn up_command_fails_non_existing_device() {
         let cmd = DeviceCommand::Up("ne0");
         let res = unsafe { cmd.exec().err() };
-        assert_eq!(res, Some("can't get device flags: No such device (os error 19)".to_owned()));
+        assert_eq!(
+            res,
+            Some("can't get device flags: No such device (os error 19)".to_owned())
+        );
     }
 
     #[test]
@@ -110,7 +119,10 @@ mod device_command_tests {
         let ip = "10.0.0.1".parse().unwrap();
         let cmd = DeviceCommand::SetIp("ne0", &ip);
         let res = unsafe { cmd.exec().err() };
-        assert_eq!(res, Some("can't set ip address: No such device (os error 19)".to_owned()));
+        assert_eq!(
+            res,
+            Some("can't set ip address: No such device (os error 19)".to_owned())
+        );
     }
 
     #[test]
@@ -132,7 +144,10 @@ mod device_command_tests {
         let netmask = "255.255.255.0".parse().unwrap();
         let cmd = DeviceCommand::SetNetmask("ne0", &netmask);
         let res = unsafe { cmd.exec().err() };
-        assert_eq!(res, Some("can't set netmask: No such device (os error 19)".to_owned()));
+        assert_eq!(
+            res,
+            Some("can't set netmask: No such device (os error 19)".to_owned())
+        );
     }
 
     #[test]
