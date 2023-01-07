@@ -11,6 +11,8 @@ jobs:
       image: ubuntu:22.04
       options: --user root
     steps:
+      - run: apt-get install wget -y
+
       - name: checkout repo
         uses: actions/checkout@v3
 
