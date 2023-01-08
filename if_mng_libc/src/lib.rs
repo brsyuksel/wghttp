@@ -152,7 +152,7 @@ impl<'a> DeviceCommand<'a> {
 }
 
 // TODO: portability problem -> arm cpu expects str params as u8 instead of i8.
-unsafe fn new_ifreq_for_dev(dev_name: &str) -> libc::ifreq {
+fn new_ifreq_for_dev(dev_name: &str) -> libc::ifreq {
     let mut dev_name_arr = [0u8; 16];
     dev_name_arr[..dev_name.len()].copy_from_slice(dev_name.as_bytes());
     let dev_name_arr_i8 = dev_name_arr.map(|i| i as i8);
