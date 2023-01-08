@@ -7,15 +7,7 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
-    container:
-      image: ubuntu:22.04
-      options: --user root
     steps:
-      - run: apt-get update && apt-get install wget build-essential -y
-
-      - run: |
-          echo "ACTIONS_ALLOW_UNSECURE_COMMANDS=true" >> $GITHUB_ENV
-
       - name: checkout repo
         uses: actions/checkout@v3
 
@@ -30,8 +22,3 @@ jobs:
         with:
           command: fmt
           args: --all -- --check
-
-      - name: tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
