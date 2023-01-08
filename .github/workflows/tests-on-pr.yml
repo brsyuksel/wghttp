@@ -11,7 +11,7 @@ jobs:
       image: ubuntu:22.04
       options: --user root
     steps:
-      - run: apt-get update && apt-get install wget -y
+      - run: apt-get update && apt-get install wget build-essential -y
 
       - run: |
           echo "ACTIONS_ALLOW_UNSECURE_COMMANDS=true" >> $GITHUB_ENV
