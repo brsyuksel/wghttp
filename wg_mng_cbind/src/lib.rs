@@ -81,11 +81,9 @@ impl WireguardManager for WireguardManagerCBind {
 
     fn del_device(&self, device_name: &str) -> Result<(), WireguardError> {
         let dev_name = CString::new(device_name).map_err(|e| WireguardError(e.to_string()))?;
-        let deleted = unsafe {
-            bindings::wg_del_device(dev_name.as_ptr())
-        };
+        let deleted = unsafe { bindings::wg_del_device(dev_name.as_ptr()) };
         if deleted != 0 {
-            return Err(WireguardError("device can not be deleted".to_owned()))
+            return Err(WireguardError("device can not be deleted".to_owned()));
         }
 
         Ok(())
