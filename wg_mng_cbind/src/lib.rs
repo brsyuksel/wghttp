@@ -88,4 +88,67 @@ impl WireguardManager for WireguardManagerCBind {
 
         Ok(())
     }
+
+    fn get_device(&self, device_name: &str) -> Result<WGDevice, WireguardError> {
+        let dev_name = CString::new(device_name).map_err(|e| WireguardError(e.to_string()))?;
+        let mut dev: *mut bindings::wg_device = &mut bindings::wg_device {
+            name: [0; 16],
+            ifindex: 0,
+            flags: 0,
+            public_key: [0; 32],
+            private_key: [0; 32],
+            fwmark: 0,
+            listen_port: 0,
+            first_peer: ptr::null_mut(),
+            last_peer: ptr::null_mut(),
+        };
+        let got = unsafe { bindings::wg_get_device(&mut dev, dev_name.as_ptr()) };
+        if got != 0 {
+            return Err(WireguardError("can't get device".to_owned()));
+        }
+
+        let mut wg = WGDevice {
+            name: device_name.to_owned(),
+            public_key: "".to_owned(),
+            private_key: "".to_owned(),
+            port: 0,
+            total_peers: 0,
+        };
+
+        unsafe {
+            // port
+            wg.port = (*dev).listen_port;
+
+            // total peers
+            let mut total_peers = 0;
+            let mut peer = (*dev).first_peer;
+            loop {
+                if peer.is_null() {
+                    break;
+                }
+                total_peers += 1;
+
+                peer = (*peer).next_peer;
+            }
+            wg.total_peers = total_peers;
+
+            // priv key
+            let mut priv_key_rep: [i8; 64] = [0; 64];
+            bindings::wg_key_to_base64(priv_key_rep.as_mut_ptr(), (*dev).private_key.as_mut_ptr());
+            let priv_str = CStr::from_ptr(priv_key_rep.as_ptr())
+                .to_str()
+                .map_err(|e| WireguardError(e.to_string()))?;
+            wg.private_key = priv_str.to_owned();
+
+            // pub key
+            let mut pub_key_rep: [i8; 64] = [0; 64];
+            bindings::wg_key_to_base64(pub_key_rep.as_mut_ptr(), (*dev).public_key.as_mut_ptr());
+            let pub_str = CStr::from_ptr(pub_key_rep.as_ptr())
+                .to_str()
+                .map_err(|e| WireguardError(e.to_string()))?;
+            wg.public_key = pub_str.to_owned();
+        }
+
+        Ok(wg)
+    }
 }
