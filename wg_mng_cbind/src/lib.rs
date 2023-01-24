@@ -151,4 +151,29 @@ impl WireguardManager for WireguardManagerCBind {
 
         Ok(wg)
     }
+
+    fn list_devices(&self) -> Result<Vec<WGDevice>, WireguardError> {
+        let devices = unsafe {
+            let mut v: Vec<WGDevice> = vec![];
+
+            let names = bindings::wg_list_device_names();
+            let mut offset = 0;
+            loop {
+                let name = CStr::from_ptr(names.offset(offset))
+                    .to_str()
+                    .map_err(|e| WireguardError(e.to_string()))?;
+
+                if name == "" {
+                    break;
+                }
+
+                let dev = self.get_device(name)?;
+                v.push(dev);
+                offset += (name.len() + 1) as isize;
+            }
+            v
+        };
+
+        Ok(devices)
+    }
 }
