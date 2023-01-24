@@ -21,7 +21,7 @@ pub struct WGDevice {
 }
 
 pub trait WireguardManager {
-    fn add_new_device(&self, device_name: &str, port: u16) -> Result<WGDevice, WireguardError>;
+    fn add_device(&self, device_name: &str, port: u16) -> Result<WGDevice, WireguardError>;
     fn del_device(&self, device_name: &str) -> Result<(), WireguardError>;
     fn get_device(&self, device_name: &str) -> Result<WGDevice, WireguardError>;
     fn list_devices(&self) -> Result<Vec<WGDevice>, WireguardError>;

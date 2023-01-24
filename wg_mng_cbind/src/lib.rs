@@ -7,7 +7,7 @@ mod bindings;
 pub struct WireguardManagerCBind;
 
 impl WireguardManager for WireguardManagerCBind {
-    fn add_new_device(&self, device_name: &str, port: u16) -> Result<WGDevice, WireguardError> {
+    fn add_device(&self, device_name: &str, port: u16) -> Result<WGDevice, WireguardError> {
         let dev_name = CString::new(device_name).map_err(|e| WireguardError(e.to_string()))?;
         let added = unsafe { bindings::wg_add_device(dev_name.as_ptr()) };
         if added != 0 {
