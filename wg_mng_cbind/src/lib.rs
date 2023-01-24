@@ -31,35 +31,14 @@ impl WireguardManager for WireguardManagerCBind {
             return Err(WireguardError("can't get device back".to_owned()));
         }
 
-        let mut priv_key: [u8; 32] = [0; 32];
-        let mut pub_key: [u8; 32] = [0; 32];
-
-        let mut priv_key_rep: [i8; 64] = [0; 64];
-        let mut pub_key_rep: [i8; 64] = [0; 64];
-        let (priv_str, pub_str) = unsafe {
-            bindings::wg_generate_private_key(priv_key.as_mut_ptr());
-            bindings::wg_generate_public_key(pub_key.as_mut_ptr(), priv_key.as_mut_ptr());
-
-            bindings::wg_key_to_base64(priv_key_rep.as_mut_ptr(), priv_key.as_mut_ptr());
-            bindings::wg_key_to_base64(pub_key_rep.as_mut_ptr(), pub_key.as_mut_ptr());
-
-            let priv_str = CStr::from_ptr(priv_key_rep.as_ptr())
-                .to_str()
-                .map_err(|e| WireguardError(e.to_string()))?;
-
-            let pub_str = CStr::from_ptr(pub_key_rep.as_ptr())
-                .to_str()
-                .map_err(|e| WireguardError(e.to_string()))?;
-
-            (priv_str, pub_str)
-        };
+        let mut key_pair = KeyPair::new();
 
         let set = unsafe {
             (*dev).flags = bindings::wg_device_flags_WGDEVICE_HAS_PRIVATE_KEY
                 | bindings::wg_device_flags_WGDEVICE_HAS_PRIVATE_KEY
                 | bindings::wg_device_flags_WGDEVICE_HAS_LISTEN_PORT;
-            (*dev).private_key = priv_key;
-            (*dev).public_key = pub_key;
+            (*dev).private_key = key_pair.private_key;
+            (*dev).public_key = key_pair.public_key;
             (*dev).listen_port = port;
 
             bindings::wg_set_device(dev)
@@ -68,10 +47,11 @@ impl WireguardManager for WireguardManagerCBind {
             return Err(WireguardError("can't set device".to_owned()));
         }
 
+        let key_pair_str = key_pair.to_pair_str().map_err(|e| WireguardError(e))?;
         let wg = WGDevice {
             name: device_name.to_owned(),
-            public_key: pub_str.to_owned(),
-            private_key: priv_str.to_owned(),
+            public_key: key_pair_str.public_key,
+            private_key: key_pair_str.private_key,
             port: port,
             total_peers: 0,
         };
@@ -132,21 +112,11 @@ impl WireguardManager for WireguardManagerCBind {
             }
             wg.total_peers = total_peers;
 
-            // priv key
-            let mut priv_key_rep: [i8; 64] = [0; 64];
-            bindings::wg_key_to_base64(priv_key_rep.as_mut_ptr(), (*dev).private_key.as_mut_ptr());
-            let priv_str = CStr::from_ptr(priv_key_rep.as_ptr())
-                .to_str()
-                .map_err(|e| WireguardError(e.to_string()))?;
-            wg.private_key = priv_str.to_owned();
+            let mut key_pair = KeyPair::new_from((*dev).private_key, (*dev).public_key);
+            let key_pair_str = key_pair.to_pair_str().map_err(|e| WireguardError(e))?;
 
-            // pub key
-            let mut pub_key_rep: [i8; 64] = [0; 64];
-            bindings::wg_key_to_base64(pub_key_rep.as_mut_ptr(), (*dev).public_key.as_mut_ptr());
-            let pub_str = CStr::from_ptr(pub_key_rep.as_ptr())
-                .to_str()
-                .map_err(|e| WireguardError(e.to_string()))?;
-            wg.public_key = pub_str.to_owned();
+            wg.private_key = key_pair_str.private_key;
+            wg.public_key = key_pair_str.public_key;
         }
 
         Ok(wg)
@@ -175,5 +145,65 @@ impl WireguardManager for WireguardManagerCBind {
         };
 
         Ok(devices)
+    }
+}
+
+#[derive(Debug)]
+struct KeyPair {
+    private_key: [u8; 32],
+    public_key: [u8; 32],
+}
+
+#[derive(Debug)]
+struct KeyPairStr {
+    private_key: String,
+    public_key: String,
+}
+
+impl KeyPair {
+    fn new() -> Self {
+        let mut priv_key: [u8; 32] = [0; 32];
+        let mut pub_key: [u8; 32] = [0; 32];
+        unsafe {
+            bindings::wg_generate_private_key(priv_key.as_mut_ptr());
+            bindings::wg_generate_public_key(pub_key.as_mut_ptr(), priv_key.as_mut_ptr());
+        };
+
+        Self {
+            private_key: priv_key,
+            public_key: pub_key,
+        }
+    }
+
+    fn new_from(priv_key: [u8; 32], pub_key: [u8; 32]) -> Self {
+        Self {
+            private_key: priv_key,
+            public_key: pub_key,
+        }
+    }
+
+    fn to_pair_str(&mut self) -> Result<KeyPairStr, String> {
+        let mut priv_key_rep: [i8; 64] = [0; 64];
+        let mut pub_key_rep: [i8; 64] = [0; 64];
+
+        let (priv_str, pub_str) = unsafe {
+            bindings::wg_key_to_base64(priv_key_rep.as_mut_ptr(), self.private_key.as_mut_ptr());
+            bindings::wg_key_to_base64(pub_key_rep.as_mut_ptr(), self.public_key.as_mut_ptr());
+
+            let priv_s = CStr::from_ptr(priv_key_rep.as_ptr())
+                .to_str()
+                .map_err(|e| e.to_string())?;
+
+            let pub_s = CStr::from_ptr(pub_key_rep.as_ptr())
+                .to_str()
+                .map_err(|e| e.to_string())?;
+
+            (priv_s.to_owned(), pub_s.to_owned())
+        };
+
+        Ok(KeyPairStr {
+            private_key: priv_str,
+            public_key: pub_str,
+        })
     }
 }
