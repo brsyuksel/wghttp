@@ -37,7 +37,12 @@ pub trait WireguardManager {
     fn get_device(&self, device_name: &str) -> Result<WGDevice, WireguardError>;
     fn list_devices(&self) -> Result<Vec<WGDevice>, WireguardError>;
 
-    fn add_peer(&self, device_name: &str, allowed_ips: Vec<String>, keepalive: u16) -> Result<(WGPeer, String), WireguardError>;
+    fn add_peer(
+        &self,
+        device_name: &str,
+        allowed_ips: Vec<String>,
+        keepalive: u16,
+    ) -> Result<(WGPeer, String), WireguardError>;
     fn del_peer(&self, device_name: &str, public_key: &str) -> Result<(), WireguardError>;
     fn list_peers(&self, device_name: &str) -> Result<Vec<WGPeer>, WireguardError>;
 }

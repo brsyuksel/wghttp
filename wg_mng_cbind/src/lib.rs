@@ -216,8 +216,6 @@ impl WireguardManager for WireguardManagerCBind {
             bindings::wg_set_device(dev)
         };
 
-        
-
         if set != 0 {
             return Err(WireguardError("can't update device".to_owned()));
         }
