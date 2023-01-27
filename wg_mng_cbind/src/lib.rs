@@ -204,6 +204,39 @@ impl WireguardManager for WireguardManagerCBind {
 
         let set = unsafe {
             // set allowed ips
+            let mut prev_allowed_ip: *mut bindings::wg_allowedip = (*peer).first_allowedip;
+            for ip in allowed_ips.iter() {
+                let (ip_str, cidr_str) = ip
+                    .split_once('/')
+                    .ok_or(WireguardError(format!("invalid ip format: {}", ip)))?;
+
+                let cidr = cidr_str
+                    .parse::<u8>()
+                    .map_err(|e| WireguardError(e.to_string()))?;
+
+                let allowed_ip = Box::new(bindings::wg_allowedip {
+                    family: libc::AF_INET as u16,
+                    __bindgen_anon_1: bindings::wg_allowedip__bindgen_ty_1 {
+                        ip4: bindings::in_addr {
+                            s_addr: helpers::inet_addr_for_string(ip_str.to_owned()),
+                        },
+                    },
+                    cidr: cidr,
+                    next_allowedip: ptr::null_mut(),
+                });
+
+                // TODO: we have to deallocate it by manually.
+                let allowed_ip_ptr = Box::into_raw(allowed_ip);
+
+                if (*peer).first_allowedip.is_null() {
+                    (*peer).first_allowedip = allowed_ip_ptr;
+                    prev_allowed_ip = allowed_ip_ptr;
+                    continue;
+                }
+
+                (*prev_allowed_ip).next_allowedip = allowed_ip_ptr;
+                prev_allowed_ip = allowed_ip_ptr;
+            }
 
             if (*dev).first_peer.is_null() {
                 (*dev).first_peer = peer;
