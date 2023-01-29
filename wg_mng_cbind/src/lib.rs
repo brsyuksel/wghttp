@@ -5,6 +5,9 @@ use std::ptr;
 
 mod bindings;
 
+#[cfg(test)]
+mod tests;
+
 extern "C" {
     fn inet_ntoa(addr: libc::in_addr) -> *const libc::c_char;
     fn inet_addr(cp: *const libc::c_char) -> libc::in_addr_t;
