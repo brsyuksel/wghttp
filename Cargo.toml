@@ -3,5 +3,6 @@
 members = [
     "core",
     "if_mng_libc",
+    "wg_mng_cbind",
     "wghttp",
 ]
