@@ -65,6 +65,10 @@ impl WireguardManager for WireguardManagerCBind {
             total_peers: 0,
         };
 
+        unsafe {
+            bindings::wg_free_device(dev);
+        };
+
         Ok(wg)
     }
 
@@ -126,6 +130,8 @@ impl WireguardManager for WireguardManagerCBind {
 
             wg.private_key = key_pair_str.private_key;
             wg.public_key = key_pair_str.public_key;
+
+            bindings::wg_free_device(dev);
         }
 
         Ok(wg)
@@ -150,6 +156,8 @@ impl WireguardManager for WireguardManagerCBind {
                 v.push(dev);
                 offset += (name.len() + 1) as isize;
             }
+
+            libc::free(names as *mut libc::c_void);
             v
         };
 
@@ -228,7 +236,6 @@ impl WireguardManager for WireguardManagerCBind {
                     next_allowedip: ptr::null_mut(),
                 });
 
-                // TODO: we have to deallocate it by manually.
                 let allowed_ip_ptr = Box::into_raw(allowed_ip);
 
                 if (*peer).first_allowedip.is_null() {
@@ -249,7 +256,12 @@ impl WireguardManager for WireguardManagerCBind {
                 (*dev).last_peer = peer;
             }
 
-            bindings::wg_set_device(dev)
+            let res = bindings::wg_set_device(dev);
+            helpers::free_wg_allowed_ips(dev);
+            (*dev).first_peer = ptr::null_mut();
+            (*dev).last_peer = ptr::null_mut();
+            bindings::wg_free_device(dev);
+            res
         };
 
         if set != 0 {
@@ -302,7 +314,9 @@ impl WireguardManager for WireguardManagerCBind {
                 peer = (*peer).next_peer;
             }
 
-            bindings::wg_set_device(dev)
+            let res = bindings::wg_set_device(dev);
+            bindings::wg_free_device(dev);
+            res
         };
         if removed != 0 {
             return Err(WireguardError("can't remove peer".to_owned()));
@@ -360,6 +374,7 @@ impl WireguardManager for WireguardManagerCBind {
 
                 current_peer = (*current_peer).next_peer;
             }
+            bindings::wg_free_device(dev);
         }
 
         Ok(peers)
@@ -469,6 +484,10 @@ mod helpers {
     pub unsafe fn endpoint_to_str(
         endpoint: crate::bindings::wg_endpoint,
     ) -> Result<String, String> {
+        if endpoint.addr.sa_family == 0 {
+            return Ok("".to_owned());
+        }
+
         if endpoint.addr.sa_family != libc::AF_INET as u16 {
             return Err("ipv6 is not supported yet".to_owned());
         }
@@ -487,5 +506,29 @@ mod helpers {
 
     pub unsafe fn inet_addr_for_string(addr: String) -> libc::in_addr_t {
         crate::inet_addr(addr.as_ptr() as *const i8)
+    }
+
+    pub unsafe fn free_wg_allowed_ips(dev: *mut crate::bindings::wg_device) {
+        let mut peer: *mut crate::bindings::wg_peer = (*dev).first_peer;
+        loop {
+            if peer.is_null() {
+                break;
+            }
+
+            let mut allowed_ip: *mut crate::bindings::wg_allowedip = (*peer).first_allowedip;
+            let mut next_allowed_ip: *mut crate::bindings::wg_allowedip = crate::ptr::null_mut();
+            loop {
+                if allowed_ip.is_null() {
+                    break;
+                }
+
+                next_allowed_ip = (*allowed_ip).next_allowedip;
+                let _ = Box::from_raw(allowed_ip);
+                allowed_ip = next_allowed_ip;
+            }
+            (*peer).first_allowedip = crate::ptr::null_mut();
+
+            peer = (*peer).next_peer;
+        }
     }
 }
