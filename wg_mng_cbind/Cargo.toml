@@ -10,5 +10,5 @@ core = { path = "../core" }
 libc = "0.2.137"
 
 [build-dependencies]
-bindgen = "0.63.0"
+bindgen = "0.64.0"
 cc = "1.0.78"
