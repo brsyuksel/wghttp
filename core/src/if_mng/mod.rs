@@ -20,5 +20,5 @@ pub trait InterfaceManager {
         netmask: &Ipv4Addr,
     ) -> Result<(), InterfaceError>;
 
-    fn up_device(&self, device_name: &str,) -> Result<(), InterfaceError>;
+    fn up_device(&self, device_name: &str) -> Result<(), InterfaceError>;
 }

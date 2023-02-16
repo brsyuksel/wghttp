@@ -64,7 +64,10 @@ mod if_mng_tests {
         let m = InterfaceManagerLibC;
         let ip = "10.0.0.1".parse().unwrap();
         let netmask = "255.255.255.0".parse().unwrap();
-        let res = m.set_ip_and_netmask("ne0", &ip, &netmask).map_err(|e| e.0).err();
+        let res = m
+            .set_ip_and_netmask("ne0", &ip, &netmask)
+            .map_err(|e| e.0)
+            .err();
         assert_eq!(
             res,
             Some("can't set ip address: No such device (os error 19)".to_owned())
