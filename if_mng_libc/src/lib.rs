@@ -10,26 +10,12 @@ extern "C" {
     fn inet_addr(cp: *const libc::c_char) -> libc::in_addr_t;
 }
 
-pub struct InterfaceManagerLibC<'a> {
-    device_name: &'a str,
-}
+pub struct InterfaceManagerLibC;
 
-impl<'a> InterfaceManagerLibC<'a> {
-    pub fn new(dev_name: &'a str) -> Self {
-        Self {
-            device_name: dev_name,
-        }
-    }
-}
-
-impl<'a> InterfaceManager for InterfaceManagerLibC<'a> {
-    fn get_device_name(&self) -> &str {
-        self.device_name
-    }
-
-    fn up_device(&self) -> Result<(), InterfaceError> {
+impl InterfaceManager for InterfaceManagerLibC {
+    fn up_device(&self, device_name: &str) -> Result<(), InterfaceError> {
         unsafe {
-            DeviceCommand::Up(self.get_device_name())
+            DeviceCommand::Up(device_name)
                 .exec()
                 .map_err(|e| InterfaceError(e))
         }
@@ -37,15 +23,16 @@ impl<'a> InterfaceManager for InterfaceManagerLibC<'a> {
 
     fn set_ip_and_netmask(
         &self,
+        device_name: &str,
         ip_addr: &Ipv4Addr,
         netmask: &Ipv4Addr,
     ) -> Result<(), InterfaceError> {
         unsafe {
-            DeviceCommand::SetIp(self.get_device_name(), ip_addr)
+            DeviceCommand::SetIp(device_name, ip_addr)
                 .exec()
                 .map_err(|e| InterfaceError(e))?;
 
-            DeviceCommand::SetNetmask(self.get_device_name(), netmask)
+            DeviceCommand::SetNetmask(device_name, netmask)
                 .exec()
                 .map_err(|e| InterfaceError(e))
         }
