@@ -6,5 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-core = {  path = "../core" }
-if_mng_libc = { path = "../if_mng_libc" }
+core = { path = "../core" }
+utoipa = "3"
+tokio = { version = "1" , features = ["full"]}
+warp = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+ipnet = "2.7"
