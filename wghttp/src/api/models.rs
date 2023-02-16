@@ -1,25 +1,26 @@
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-#[derive(ToSchema)]
+#[derive(ToSchema, Serialize)]
 pub struct Error {
     pub message: String,
 }
 
-#[derive(ToSchema)]
+#[derive(ToSchema, Serialize)]
 pub struct ListDevice {
     pub device_name: String,
     pub port: u16,
     pub total_peers: u64,
 }
 
-#[derive(ToSchema)]
+#[derive(ToSchema, Serialize, Deserialize)]
 pub struct CreateDevice {
     pub device_name: String,
     pub port: u16,
     pub ip: String,
 }
 
-#[derive(ToSchema)]
+#[derive(ToSchema, Serialize)]
 pub struct DetailDevice {
     pub device_name: String,
     pub port: u16,
@@ -29,7 +30,7 @@ pub struct DetailDevice {
     pub total_peers: u64,
 }
 
-#[derive(ToSchema)]
+#[derive(ToSchema, Serialize)]
 pub struct ListPeer {
     pub public_key: String,
     pub endpoint: String,
@@ -40,13 +41,13 @@ pub struct ListPeer {
     pub allowed_ips: Vec<String>,
 }
 
-#[derive(ToSchema)]
+#[derive(ToSchema, Serialize, Deserialize)]
 pub struct CreatePeer {
     pub persistent_keepalive_time: u16,
     pub allowed_ips: Vec<String>,
 }
 
-#[derive(ToSchema)]
+#[derive(ToSchema, Serialize)]
 pub struct DetailPeer {
     pub public_key: String,
     pub private_key: String,

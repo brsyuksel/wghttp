@@ -34,12 +34,12 @@ mod test_helper {
 #[cfg(test)]
 mod if_mng_tests {
     use super::{super::InterfaceManagerLibC, test_helper};
-    use core::if_mng::*;
+    use basis::if_mng::*;
 
     #[test]
     fn fails_on_up_non_existing_device() {
-        let m = InterfaceManagerLibC::new("ne0");
-        let res = m.up_device().map_err(|e| e.0).err();
+        let m = InterfaceManagerLibC;
+        let res = m.up_device("ne0").map_err(|e| e.0).err();
         assert_eq!(
             res,
             Some("can't get device flags: No such device (os error 19)".to_owned())
@@ -49,8 +49,8 @@ mod if_mng_tests {
     #[test]
     fn sets_up_device() {
         test_helper::manage_dev("iftest0", || {
-            let m = InterfaceManagerLibC::new("iftest0");
-            let res = m.up_device().err();
+            let m = InterfaceManagerLibC;
+            let res = m.up_device("iftest0").err();
             assert!(res.is_none());
 
             let ip_addr_res = test_helper::ip_addr_output("iftest0");
@@ -61,10 +61,13 @@ mod if_mng_tests {
 
     #[test]
     fn fails_setting_ip_and_netmask_non_existing_device() {
-        let m = InterfaceManagerLibC::new("ne0");
+        let m = InterfaceManagerLibC;
         let ip = "10.0.0.1".parse().unwrap();
         let netmask = "255.255.255.0".parse().unwrap();
-        let res = m.set_ip_and_netmask(&ip, &netmask).map_err(|e| e.0).err();
+        let res = m
+            .set_ip_and_netmask("ne0", &ip, &netmask)
+            .map_err(|e| e.0)
+            .err();
         assert_eq!(
             res,
             Some("can't set ip address: No such device (os error 19)".to_owned())
@@ -74,10 +77,10 @@ mod if_mng_tests {
     #[test]
     fn sets_ip_and_netmask() {
         test_helper::manage_dev("iftest0", || {
-            let m = InterfaceManagerLibC::new("iftest0");
+            let m = InterfaceManagerLibC;
             let ip = "10.0.0.1".parse().unwrap();
             let netmask = "255.255.255.0".parse().unwrap();
-            let res = m.set_ip_and_netmask(&ip, &netmask).err();
+            let res = m.set_ip_and_netmask("iftest0", &ip, &netmask).err();
             assert!(res.is_none());
 
             let ip_addr_res = test_helper::ip_addr_output("iftest0");

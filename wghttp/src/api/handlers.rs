@@ -1,14 +1,45 @@
-pub mod device {}
-
-pub mod peers {}
-
 pub mod server {
+    use std::convert::Infallible;
     use std::net::SocketAddr;
+    use std::sync::Arc;
 
+    use ipnet::Ipv4Net;
+    use serde::de::DeserializeOwned;
+    use tokio::sync::Mutex;
     use utoipa::OpenApi;
+    use warp::http::StatusCode;
+    use warp::reply::json;
     use warp::Filter;
 
+    use basis::if_mng::*;
+    use basis::wg_mng::*;
+
     use crate::api::models::*;
+
+    type SyncMngr<T> = Arc<Mutex<T>>;
+
+    fn with_wg(
+        wg: SyncMngr<dyn WireguardManager + Send>,
+    ) -> impl Filter<
+        Extract = (SyncMngr<dyn WireguardManager + Send>,),
+        Error = std::convert::Infallible,
+    > + Clone {
+        warp::any().map(move || wg.clone())
+    }
+
+    fn with_im(
+        im: SyncMngr<dyn InterfaceManager + Send>,
+    ) -> impl Filter<
+        Extract = (SyncMngr<dyn InterfaceManager + Send>,),
+        Error = std::convert::Infallible,
+    > + Clone {
+        warp::any().map(move || im.clone())
+    }
+
+    fn with_json_payload<T: DeserializeOwned + Send>(
+    ) -> impl Filter<Extract = (T,), Error = warp::Rejection> + Clone {
+        warp::body::content_length_limit(1024 * 16).and(warp::body::json())
+    }
 
     #[utoipa::path(
         get,
@@ -33,7 +64,41 @@ pub mod server {
             (status = 200, description = "successful listing", body = Vec<ListDevice>),
         )
     )]
-    pub async fn list_devices() {}
+    pub fn list_devices(
+        wg: SyncMngr<dyn WireguardManager + Send>,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+        warp::path!("devices")
+            .and(warp::get())
+            .and(with_wg(wg))
+            .and_then(list_devices_handler)
+    }
+
+    async fn list_devices_handler(
+        wg: SyncMngr<dyn WireguardManager + Send>,
+    ) -> Result<impl warp::Reply, Infallible> {
+        let mngr = wg.lock().await;
+        let devices_res = mngr.list_devices();
+
+        if let Err(e) = devices_res {
+            let output = Error { message: e.0 };
+            return Ok(warp::reply::with_status(
+                json(&output),
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ));
+        }
+        let devs = devices_res.unwrap();
+
+        let output = devs
+            .iter()
+            .map(|wd| ListDevice {
+                device_name: wd.name.clone(),
+                port: wd.port,
+                total_peers: wd.total_peers,
+            })
+            .collect::<Vec<ListDevice>>();
+
+        Ok(warp::reply::with_status(json(&output), StatusCode::OK))
+    }
 
     #[utoipa::path(
         post,
@@ -46,7 +111,81 @@ pub mod server {
             (status = 409, description = "conflict error", body = Error),
         )
     )]
-    pub async fn create_device() {}
+    pub fn create_device(
+        wg: SyncMngr<dyn WireguardManager + Send>,
+        im: SyncMngr<dyn InterfaceManager + Send>,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+        warp::path!("devices")
+            .and(warp::post())
+            .and(with_json_payload::<CreateDevice>())
+            .and(with_wg(wg))
+            .and(with_im(im))
+            .and_then(create_device_handler)
+    }
+
+    async fn create_device_handler(
+        body: CreateDevice,
+        wg: SyncMngr<dyn WireguardManager + Send>,
+        im: SyncMngr<dyn InterfaceManager + Send>,
+    ) -> Result<impl warp::Reply, Infallible> {
+        let addr_result = body.ip.parse::<Ipv4Net>();
+        if let Err(_) = addr_result {
+            let output = Error {
+                message: "error on parsing ip addr".to_owned(),
+            };
+            return Ok(warp::reply::with_status(
+                json(&output),
+                StatusCode::BAD_REQUEST,
+            ));
+        }
+        let addr = addr_result.unwrap();
+
+        let wg_mngr = wg.lock().await;
+        let if_mngr = im.lock().await;
+
+        let added_result = wg_mngr.add_device(&body.device_name, body.port);
+        if let Err(added_err) = added_result {
+            let output = Error {
+                message: added_err.0,
+            };
+            return Ok(warp::reply::with_status(
+                json(&output),
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ));
+        }
+        let added_dev = added_result.unwrap();
+
+        if let Err(set_ip_err) =
+            if_mngr.set_ip_and_netmask(added_dev.name.as_str(), &addr.network(), &addr.netmask())
+        {
+            let output = Error {
+                message: set_ip_err.0,
+            };
+            return Ok(warp::reply::with_status(
+                json(&output),
+                StatusCode::CONFLICT,
+            ));
+        }
+
+        if let Err(up_err) = if_mngr.up_device(added_dev.name.as_str()) {
+            let output = Error { message: up_err.0 };
+            return Ok(warp::reply::with_status(
+                json(&output),
+                StatusCode::CONFLICT,
+            ));
+        }
+
+        let output = DetailDevice {
+            device_name: added_dev.name,
+            port: added_dev.port,
+            ip: body.ip,
+            public_key: added_dev.public_key,
+            private_key: added_dev.private_key,
+            total_peers: added_dev.total_peers,
+        };
+
+        Ok(warp::reply::with_status(json(&output), StatusCode::CREATED))
+    }
 
     #[utoipa::path(
         get,
@@ -60,7 +199,45 @@ pub mod server {
             ("device_name" = String, Path, description = "wireguard device name")
         )
     )]
-    pub async fn get_device() {}
+    pub fn get_device(
+        wg: SyncMngr<dyn WireguardManager + Send>,
+        im: SyncMngr<dyn InterfaceManager + Send>,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+        warp::path!("devices" / String)
+            .and(warp::get())
+            .and(with_wg(wg))
+            .and(with_im(im))
+            .and_then(get_device_handler)
+    }
+
+    async fn get_device_handler(
+        device_name: String,
+        wg: SyncMngr<dyn WireguardManager + Send>,
+        im: SyncMngr<dyn InterfaceManager + Send>,
+    ) -> Result<impl warp::Reply, Infallible> {
+        let wg_mngr = wg.lock().await;
+
+        let dev_result = wg_mngr.get_device(device_name.as_str());
+        if let Err(dev_err) = dev_result {
+            let output = Error { message: dev_err.0 };
+            return Ok(warp::reply::with_status(
+                json(&output),
+                StatusCode::NOT_FOUND,
+            ));
+        }
+        let dev = dev_result.unwrap();
+
+        let output = DetailDevice {
+            device_name: dev.name,
+            port: dev.port,
+            ip: "".to_owned(), // TODO
+            public_key: dev.public_key,
+            private_key: dev.private_key,
+            total_peers: dev.total_peers,
+        };
+
+        Ok(warp::reply::with_status(json(&output), StatusCode::OK))
+    }
 
     #[utoipa::path(
         delete,
@@ -74,7 +251,28 @@ pub mod server {
             ("device_name" = String, Path, description = "wireguard device name")
         )
     )]
-    pub async fn delete_device() {}
+    pub fn delete_device(
+        wg: SyncMngr<dyn WireguardManager + Send>,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+        warp::path!("devices" / String)
+            .and(warp::delete())
+            .and(with_wg(wg))
+            .and_then(delete_device_handler)
+    }
+
+    async fn delete_device_handler(
+        device_name: String,
+        wg: SyncMngr<dyn WireguardManager + Send>,
+    ) -> Result<impl warp::Reply, Infallible> {
+        let wg_mngr = wg.lock().await;
+
+        let status_code = match wg_mngr.del_device(device_name.as_str()) {
+            Err(_) => StatusCode::NOT_FOUND,
+            Ok(_) => StatusCode::NO_CONTENT,
+        };
+
+        Ok(status_code)
+    }
 
     #[utoipa::path(
         get,
@@ -88,7 +286,47 @@ pub mod server {
             ("device_name" = String, Path, description = "wireguard device name")
         )
     )]
-    pub async fn list_peers() {}
+    pub fn list_peers(
+        wg: SyncMngr<dyn WireguardManager + Send>,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+        warp::path!("devices" / String / "peers")
+            .and(warp::get())
+            .and(with_wg(wg))
+            .and_then(list_peers_handler)
+    }
+
+    async fn list_peers_handler(
+        device_name: String,
+        wg: SyncMngr<dyn WireguardManager + Send>,
+    ) -> Result<impl warp::Reply, Infallible> {
+        let wg_mngr = wg.lock().await;
+
+        let peers_res = wg_mngr.list_peers(device_name.as_str());
+        if let Err(e) = peers_res {
+            let output = Error { message: e.0 };
+            return Ok(warp::reply::with_status(
+                json(&output),
+                StatusCode::NOT_FOUND,
+            ));
+        }
+
+        let peers = peers_res.unwrap();
+
+        let output = peers
+            .iter()
+            .map(|p| ListPeer {
+                public_key: p.public_key.clone(),
+                endpoint: p.endpoint.clone(),
+                last_handshake_time: p.last_handshake_time as u64, // FIXME
+                rx: p.rx,
+                tx: p.tx,
+                persistent_keepalive_time: p.persistent_keepalive_interval,
+                allowed_ips: p.allowed_ips.clone(),
+            })
+            .collect::<Vec<ListPeer>>();
+
+        Ok(warp::reply::with_status(json(&output), StatusCode::OK))
+    }
 
     #[utoipa::path(
         post,
@@ -104,7 +342,62 @@ pub mod server {
             ("device_name" = String, Path, description = "wireguard device name")
         )
     )]
-    pub async fn create_peer() {}
+    pub fn create_peer(
+        wg: SyncMngr<dyn WireguardManager + Send>,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+        warp::path!("devices" / String / "peers")
+            .and(warp::post())
+            .and(with_json_payload::<CreatePeer>())
+            .and(with_wg(wg))
+            .and_then(create_peer_handler)
+    }
+
+    async fn create_peer_handler(
+        device_name: String,
+        body: CreatePeer,
+        wg: SyncMngr<dyn WireguardManager + Send>,
+    ) -> Result<impl warp::Reply, Infallible> {
+        for addr in body.allowed_ips.iter() {
+            let parse_result = addr.parse::<Ipv4Net>();
+            if parse_result.is_err() {
+                let output = Error {
+                    message: "error on parsing ip addr".to_owned(),
+                };
+                return Ok(warp::reply::with_status(
+                    json(&output),
+                    StatusCode::BAD_REQUEST,
+                ));
+            }
+        }
+
+        let wg_mngr = wg.lock().await;
+
+        let add_peer_res = wg_mngr.add_peer(
+            device_name.as_str(),
+            body.allowed_ips.clone(),
+            body.persistent_keepalive_time,
+        );
+        if let Err(e) = add_peer_res {
+            let output = Error { message: e.0 };
+            return Ok(warp::reply::with_status(
+                json(&output),
+                StatusCode::NOT_FOUND,
+            ));
+        }
+
+        let (peer, priv_key) = add_peer_res.unwrap();
+        let output = DetailPeer {
+            public_key: peer.public_key,
+            private_key: priv_key,
+            endpoint: peer.endpoint,
+            last_handshake_time: peer.last_handshake_time as u64,
+            rx: peer.rx,
+            tx: peer.tx,
+            persistent_keepalive_time: peer.persistent_keepalive_interval,
+            allowed_ips: peer.allowed_ips.clone(),
+        };
+        Ok(warp::reply::with_status(json(&output), StatusCode::OK))
+    }
 
     #[utoipa::path(
         delete,
@@ -119,7 +412,29 @@ pub mod server {
             ("public_key" = String, Path, description = "peer's public key")
         )
     )]
-    pub async fn delete_peer() {}
+    pub fn delete_peer(
+        wg: SyncMngr<dyn WireguardManager + Send>,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+        warp::path!("devices" / String / "peers" / String)
+            .and(warp::delete())
+            .and(with_wg(wg))
+            .and_then(delete_peer_handler)
+    }
+
+    async fn delete_peer_handler(
+        device_name: String,
+        public_key: String,
+        wg: SyncMngr<dyn WireguardManager + Send>,
+    ) -> Result<impl warp::Reply, Infallible> {
+        let wg_mngr = wg.lock().await;
+
+        let status_code = match wg_mngr.del_peer(device_name.as_str(), public_key.as_str()) {
+            Err(_) => StatusCode::NOT_FOUND,
+            Ok(_) => StatusCode::NO_CONTENT,
+        };
+
+        Ok(status_code)
+    }
 
     #[derive(OpenApi)]
     #[openapi(
@@ -151,8 +466,24 @@ pub mod server {
             .map(|| warp::reply::json(&ApiDoc::openapi()))
     }
 
-    pub async fn serve(addr: impl Into<SocketAddr>) {
-        let routes = health().or(openapi_doc());
+    pub async fn serve<I, W>(addr: impl Into<SocketAddr>, if_mngr: I, wg_mngr: W)
+    where
+        I: InterfaceManager + Send + 'static,
+        W: WireguardManager + Send + 'static,
+    {
+        let sync_if_mngr = Arc::new(Mutex::new(if_mngr));
+        let sync_wg_mngr = Arc::new(Mutex::new(wg_mngr));
+
+        let routes = health()
+            .or(openapi_doc())
+            .or(list_devices(sync_wg_mngr.clone()))
+            .or(create_device(sync_wg_mngr.clone(), sync_if_mngr.clone()))
+            .or(get_device(sync_wg_mngr.clone(), sync_if_mngr))
+            .or(delete_device(sync_wg_mngr.clone()))
+            .or(list_peers(sync_wg_mngr.clone()))
+            .or(create_peer(sync_wg_mngr.clone()))
+            .or(delete_peer(sync_wg_mngr));
+
         warp::serve(routes).run(addr).await
     }
 }

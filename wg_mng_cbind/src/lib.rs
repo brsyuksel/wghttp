@@ -1,4 +1,4 @@
-use core::wg_mng::*;
+use basis::wg_mng::*;
 use libc;
 use std::ffi::{CStr, CString};
 use std::ptr;
