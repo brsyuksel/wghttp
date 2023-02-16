@@ -11,8 +11,8 @@ pub mod server {
     use warp::reply::json;
     use warp::Filter;
 
-    use core::if_mng::*;
-    use core::wg_mng::*;
+    use basis::if_mng::*;
+    use basis::wg_mng::*;
 
     use crate::api::models::*;
 

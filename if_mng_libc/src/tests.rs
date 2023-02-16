@@ -34,7 +34,7 @@ mod test_helper {
 #[cfg(test)]
 mod if_mng_tests {
     use super::{super::InterfaceManagerLibC, test_helper};
-    use core::if_mng::*;
+    use basis::if_mng::*;
 
     #[test]
     fn fails_on_up_non_existing_device() {
