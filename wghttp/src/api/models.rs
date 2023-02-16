@@ -13,7 +13,7 @@ pub struct ListDevice {
     pub total_peers: u64,
 }
 
-#[derive(ToSchema, Deserialize)]
+#[derive(ToSchema, Serialize, Deserialize)]
 pub struct CreateDevice {
     pub device_name: String,
     pub port: u16,
@@ -41,7 +41,7 @@ pub struct ListPeer {
     pub allowed_ips: Vec<String>,
 }
 
-#[derive(ToSchema, Deserialize)]
+#[derive(ToSchema, Serialize, Deserialize)]
 pub struct CreatePeer {
     pub persistent_keepalive_time: u16,
     pub allowed_ips: Vec<String>,
