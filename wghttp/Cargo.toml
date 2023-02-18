@@ -7,8 +7,12 @@ edition = "2021"
 
 [dependencies]
 basis = { path = "../basis" }
+if_mng_libc = { path = "../if_mng_libc" }
+wg_mng_cbind = { path = "../wg_mng_cbind" }
 utoipa = "3"
 tokio = { version = "1" , features = ["full"]}
+tokio-stream = { version = "0.1", features = ["net"] }
 warp = "0.3"
 serde = { version = "1.0", features = ["derive"] }
 ipnet = "2.7"
+argh = "0.1"

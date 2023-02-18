@@ -6,6 +6,7 @@ pub mod server {
     use ipnet::Ipv4Net;
     use serde::de::DeserializeOwned;
     use tokio::sync::Mutex;
+    use tokio_stream::wrappers::UnixListenerStream;
     use utoipa::OpenApi;
     use warp::http::StatusCode;
     use warp::reply::json;
@@ -466,7 +467,26 @@ pub mod server {
             .map(|| warp::reply::json(&ApiDoc::openapi()))
     }
 
-    pub async fn serve<I, W>(addr: impl Into<SocketAddr>, if_mngr: I, wg_mngr: W)
+    fn get_routes<I, W>(
+        if_mngr: SyncMngr<I>,
+        wg_mngr: SyncMngr<W>,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone
+    where
+        I: InterfaceManager + Send + 'static,
+        W: WireguardManager + Send + 'static,
+    {
+        health()
+            .or(openapi_doc())
+            .or(list_devices(wg_mngr.clone()))
+            .or(create_device(wg_mngr.clone(), if_mngr.clone()))
+            .or(get_device(wg_mngr.clone(), if_mngr))
+            .or(delete_device(wg_mngr.clone()))
+            .or(list_peers(wg_mngr.clone()))
+            .or(create_peer(wg_mngr.clone()))
+            .or(delete_peer(wg_mngr))
+    }
+
+    pub async fn serve_tcp<I, W>(addr: impl Into<SocketAddr>, if_mngr: I, wg_mngr: W)
     where
         I: InterfaceManager + Send + 'static,
         W: WireguardManager + Send + 'static,
@@ -474,16 +494,21 @@ pub mod server {
         let sync_if_mngr = Arc::new(Mutex::new(if_mngr));
         let sync_wg_mngr = Arc::new(Mutex::new(wg_mngr));
 
-        let routes = health()
-            .or(openapi_doc())
-            .or(list_devices(sync_wg_mngr.clone()))
-            .or(create_device(sync_wg_mngr.clone(), sync_if_mngr.clone()))
-            .or(get_device(sync_wg_mngr.clone(), sync_if_mngr))
-            .or(delete_device(sync_wg_mngr.clone()))
-            .or(list_peers(sync_wg_mngr.clone()))
-            .or(create_peer(sync_wg_mngr.clone()))
-            .or(delete_peer(sync_wg_mngr));
+        let routes = get_routes(sync_if_mngr, sync_wg_mngr);
 
         warp::serve(routes).run(addr).await
+    }
+
+    pub async fn serve_unix<I, W>(unix_stream: UnixListenerStream, if_mngr: I, wg_mngr: W)
+    where
+        I: InterfaceManager + Send + 'static,
+        W: WireguardManager + Send + 'static,
+    {
+        let sync_if_mngr = Arc::new(Mutex::new(if_mngr));
+        let sync_wg_mngr = Arc::new(Mutex::new(wg_mngr));
+
+        let routes = get_routes(sync_if_mngr, sync_wg_mngr);
+
+        warp::serve(routes).run_incoming(unix_stream).await
     }
 }
