@@ -32,7 +32,7 @@ async fn main() {
     if let Some(addr) = args.tcp {
         let sock_addr = addr.parse::<SocketAddr>().unwrap();
         api::handlers::server::serve_tcp(sock_addr, if_mngr, wg_mngr).await;
-        return
+        return;
     }
 
     use tokio::net::UnixListener;
