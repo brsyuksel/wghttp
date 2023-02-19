@@ -164,6 +164,13 @@ mod test_helpers {
         }
 
         impl InterfaceManager for MockIF {
+            fn get_ip_and_netmask(&self, device_name: &str) -> Result<String, InterfaceError> {
+                if self.ip_fails {
+                    return Err(InterfaceError("get_ip_and_netmask fails".to_owned()));
+                }
+                Ok("10.0.0.1/24".to_owned())
+            }
+
             fn set_ip_and_netmask(
                 &self,
                 device_name: &str,
@@ -203,8 +210,8 @@ mod handlers_tests {
     use warp::test::request;
 
     use super::test_helpers;
+    use crate::api::handlers::server;
     use crate::api::models::*;
-    use crate::server;
 
     #[tokio::test]
     async fn list_devices_returns_error_for_any_wg_error() {
@@ -415,7 +422,7 @@ mod handlers_tests {
             .await;
 
         assert_eq!(resp.status(), StatusCode::OK);
-        assert_eq!(resp.body(), "{\"device_name\":\"test0\",\"port\":11011,\"ip\":\"\",\"public_key\":\"pubkey\",\"private_key\":\"privkey\",\"total_peers\":11}")
+        assert_eq!(resp.body(), "{\"device_name\":\"test0\",\"port\":11011,\"ip\":\"10.0.0.1/24\",\"public_key\":\"pubkey\",\"private_key\":\"privkey\",\"total_peers\":11}")
     }
 
     #[tokio::test]

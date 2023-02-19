@@ -228,10 +228,21 @@ pub mod server {
         }
         let dev = dev_result.unwrap();
 
+        let if_mngr = im.lock().await;
+        let ip_res = if_mngr.get_ip_and_netmask(device_name.as_str());
+        if let Err(ip_err) = ip_res {
+            let output = Error { message: ip_err.0 };
+            return Ok(warp::reply::with_status(
+                json(&output),
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ));
+        }
+        let ip_addr = ip_res.unwrap();
+
         let output = DetailDevice {
             device_name: dev.name,
             port: dev.port,
-            ip: "".to_owned(), // TODO
+            ip: ip_addr,
             public_key: dev.public_key,
             private_key: dev.private_key,
             total_peers: dev.total_peers,
