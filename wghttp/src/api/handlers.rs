@@ -157,7 +157,7 @@ pub mod server {
         let added_dev = added_result.unwrap();
 
         if let Err(set_ip_err) =
-            if_mngr.set_ip_and_netmask(added_dev.name.as_str(), &addr.network(), &addr.netmask())
+            if_mngr.set_ip_and_netmask(added_dev.name.as_str(), &addr.addr(), &addr.netmask())
         {
             let output = Error {
                 message: set_ip_err.0,
