@@ -1,9 +1,9 @@
 use basis::if_mng::*;
+use ipnet::Ipv4Net;
 use libc;
 use std::ffi::CStr;
 use std::io::Error;
 use std::net::Ipv4Addr;
-use ipnet::Ipv4Net;
 
 #[cfg(test)]
 mod tests;
@@ -18,7 +18,9 @@ pub struct InterfaceManagerLibC;
 impl InterfaceManager for InterfaceManagerLibC {
     fn get_ip_and_netmask(&self, device_name: &str) -> Result<String, InterfaceError> {
         let ip_res = unsafe {
-            DeviceCommand::GetIp(device_name).exec().map_err(|e| InterfaceError(e))?
+            DeviceCommand::GetIp(device_name)
+                .exec()
+                .map_err(|e| InterfaceError(e))?
         };
 
         let DeviceCommandResult::Addr(ip_addr_str) = ip_res else {
@@ -26,16 +28,23 @@ impl InterfaceManager for InterfaceManagerLibC {
         };
 
         let netmask_res = unsafe {
-            DeviceCommand::GetNetmask(device_name).exec().map_err(|e| InterfaceError(e))?
+            DeviceCommand::GetNetmask(device_name)
+                .exec()
+                .map_err(|e| InterfaceError(e))?
         };
 
         let DeviceCommandResult::Addr(netmask_str) = netmask_res else {
             return Err(InterfaceError("unexpected command result for getting netmask".to_owned()))
         };
 
-        let ip_addr = ip_addr_str.parse::<Ipv4Addr>().map_err(|e| InterfaceError(e.to_string()))?;
-        let netmask = netmask_str.parse::<Ipv4Addr>().map_err(|e| InterfaceError(e.to_string()))?;
-        let net = Ipv4Net::with_netmask(ip_addr, netmask).map_err(|e| InterfaceError(e.to_string()))?;
+        let ip_addr = ip_addr_str
+            .parse::<Ipv4Addr>()
+            .map_err(|e| InterfaceError(e.to_string()))?;
+        let netmask = netmask_str
+            .parse::<Ipv4Addr>()
+            .map_err(|e| InterfaceError(e.to_string()))?;
+        let net =
+            Ipv4Net::with_netmask(ip_addr, netmask).map_err(|e| InterfaceError(e.to_string()))?;
 
         Ok(net.to_string())
     }
@@ -70,7 +79,7 @@ impl InterfaceManager for InterfaceManagerLibC {
 
 enum DeviceCommandResult {
     Ok,
-    Addr(String)
+    Addr(String),
 }
 
 enum DeviceCommand<'a> {
@@ -106,7 +115,11 @@ impl<'a> DeviceCommand<'a> {
         let sockaddr = ifreq.ifr_ifru.ifru_addr;
         let addr_in = *(&sockaddr as *const _ as *const libc::sockaddr_in);
         let addr_p = inet_ntoa(addr_in.sin_addr);
-        let addr_str = CStr::from_ptr(addr_p).to_str().map_err(|e| e.to_string()).unwrap().to_owned();
+        let addr_str = CStr::from_ptr(addr_p)
+            .to_str()
+            .map_err(|e| e.to_string())
+            .unwrap()
+            .to_owned();
         Ok(DeviceCommandResult::Addr(addr_str))
     }
 
@@ -120,11 +133,19 @@ impl<'a> DeviceCommand<'a> {
         let sockaddr = ifreq.ifr_ifru.ifru_addr;
         let addr_in = *(&sockaddr as *const _ as *const libc::sockaddr_in);
         let addr_p = inet_ntoa(addr_in.sin_addr);
-        let addr_str = CStr::from_ptr(addr_p).to_str().map_err(|e| e.to_string()).unwrap().to_owned();
+        let addr_str = CStr::from_ptr(addr_p)
+            .to_str()
+            .map_err(|e| e.to_string())
+            .unwrap()
+            .to_owned();
         Ok(DeviceCommandResult::Addr(addr_str))
     }
 
-    unsafe fn set_ip(fd: i32, dev_name: &str, ip_addr: &str) -> Result<DeviceCommandResult, String> {
+    unsafe fn set_ip(
+        fd: i32,
+        dev_name: &str,
+        ip_addr: &str,
+    ) -> Result<DeviceCommandResult, String> {
         let ifreq = &mut new_ifreq_for_dev(dev_name);
 
         let ip_sin = libc::sockaddr_in {
@@ -145,7 +166,11 @@ impl<'a> DeviceCommand<'a> {
         Ok(DeviceCommandResult::Ok)
     }
 
-    unsafe fn set_netmask(fd: i32, dev_name: &str, netmask: &str) -> Result<DeviceCommandResult, String> {
+    unsafe fn set_netmask(
+        fd: i32,
+        dev_name: &str,
+        netmask: &str,
+    ) -> Result<DeviceCommandResult, String> {
         let ifreq = &mut new_ifreq_for_dev(dev_name);
 
         let netmask_sin = libc::sockaddr_in {
