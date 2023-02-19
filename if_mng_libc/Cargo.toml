@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 basis = { path = "../basis" }
 libc = "0.2.137"
+ipnet = "2.7"

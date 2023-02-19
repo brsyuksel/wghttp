@@ -13,6 +13,8 @@ impl fmt::Display for InterfaceError {
 impl std::error::Error for InterfaceError {}
 
 pub trait InterfaceManager {
+    fn get_ip_and_netmask(&self, device_name: &str) -> Result<String, InterfaceError>;
+
     fn set_ip_and_netmask(
         &self,
         device_name: &str,
