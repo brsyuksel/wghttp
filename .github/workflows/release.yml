@@ -15,6 +15,11 @@ jobs:
       - name: checkout repo
         uses: actions/checkout@v3
 
+      - name: git config
+        run: |
+          git config --global user.name 'Baris Yuksel'
+          git config --global user.email 'brsyuksel@users.noreply.github.com'
+
       - name: install rust toolchain
         uses: actions-rs/toolchain@v1.0.6
         with:
