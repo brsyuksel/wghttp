@@ -1,0 +1,50 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      level:
+        description: "release sem-level [-p|-m|-M]"
+        required: true
+        default: "-p"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v3
+
+      - name: git config
+        run: |
+          git config --global user.name 'Baris Yuksel'
+          git config --global user.email 'brsyuksel@users.noreply.github.com'
+
+      - name: install semver script
+        run: |
+          wget https://raw.githubusercontent.com/fmahnke/shell-semver/master/increment_version.sh
+          chmod +x ./increment_version.sh
+      
+      - name: install rust toolchain
+        uses: actions-rs/toolchain@v1.0.6
+        with:
+          toolchain: stable
+          override: true
+      
+      - name: install toml-cli
+        run: |
+          cargo install toml-cli
+      
+      - name: get current version
+        run: |
+          echo "CURRENT_VERSION=$(toml get wghttp/Cargo.toml package.version --raw)" >> $GITHUB_ENV
+      
+      - name: bump version
+        run: |
+          echo "NEXT_VERSION=$(./increment_version.sh $RELEASE_LEVEL $CURRENT_VERSION)" >> $GITHUB_ENV
+        env:
+          RELEASE_LEVEL: ${{ inputs.level }}
+      
+      - name: print version
+        run: |
+          echo $NEXT_VERSION
