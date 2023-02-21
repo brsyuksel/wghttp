@@ -23,8 +23,9 @@ jobs:
       - name: build x86_64 linux
         run: |
           cargo build --release --target=x86_64-unknown-linux-gnu
-          mv -v target/x86_64-unknown-linux-gnu/release/wghttp ./wghttp
-          tar -czvf wghttp-x86_64-linux.tar.gz ./wghttp
+          mkdir -v bin
+          mv -v target/x86_64-unknown-linux-gnu/release/wghttp ./bin/wghttp
+          tar -czvf wghttp-x86_64-linux.tar.gz ./bin/wghttp
       
       - name: github release
         uses: ncipollo/release-action@v1
