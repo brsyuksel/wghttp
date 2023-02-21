@@ -32,6 +32,7 @@ jobs:
 
       - name: release
         run: |
-          cargo release -v --package wghttp --no-publish --tag-prefix "" --no-confirm --execute $RELEASE_LEVEL
+          git pull
+          cargo release -vv --package wghttp --no-publish --tag-prefix "" --no-confirm --execute $RELEASE_LEVEL
         env:
           RELEASE_LEVEL: ${{ inputs.level }}
