@@ -1,0 +1,19 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      level:
+        description: "release sem-level [patch|minor|major]"
+        required: true
+        default: "patch"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: echo release level
+        run: |
+          echo "LEVEL IS: $RELEASE_LEVEL"
+        env:
+          RELEASE_LEVEL: ${{ inputs.level }}
