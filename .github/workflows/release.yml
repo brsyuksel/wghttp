@@ -47,7 +47,7 @@ jobs:
 
       - name: update wghttp/Cargo.toml
         run: |
-          toml get wghttp/Cargo.toml package.version $NEXT_VERSION > wghttp/Cargo.toml
+          toml set wghttp/Cargo.toml package.version $NEXT_VERSION > wghttp/Cargo.toml
       
       - name: commit
         run: |
