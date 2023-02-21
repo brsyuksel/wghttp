@@ -12,8 +12,21 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: echo release level
+      - name: checkout repo
+        uses: actions/checkout@v3
+
+      - name: install rust toolchain
+        uses: actions-rs/toolchain@v1.0.6
+        with:
+          toolchain: stable
+          override: true
+      
+      - name: install cargo release
         run: |
-          echo "LEVEL IS: $RELEASE_LEVEL"
+          cargo install cargo-release
+
+      - name: release
+        run: |
+          cargo release --package wghttp --no-publish --tag-prefix "" --execute $RELEASE_LEVEL
         env:
           RELEASE_LEVEL: ${{ inputs.level }}
