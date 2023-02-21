@@ -44,7 +44,11 @@ jobs:
           echo "NEXT_VERSION=$(./increment_version.sh $RELEASE_LEVEL $CURRENT_VERSION)" >> $GITHUB_ENV
         env:
           RELEASE_LEVEL: ${{ inputs.level }}
-      
-      - name: print version
+
+      - name: update wghttp/Cargo.toml
         run: |
-          echo $NEXT_VERSION
+          toml get wghttp/Cargo.toml package.version $NEXT_VERSION > wghttp/Cargo.toml
+      
+      - name: commit
+        run: |
+          git diff
