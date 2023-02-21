@@ -12,11 +12,6 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: update packages
-        run: |
-          sudo apt update
-          sudo apt install -y pkg-config libssl-dev
-      
       - name: checkout repo
         uses: actions/checkout@v3
 
@@ -32,6 +27,6 @@ jobs:
 
       - name: release
         run: |
-          cargo release --package wghttp --no-publish $RELEASE_LEVEL
+          cargo release --package wghttp --no-publish --tag-prefix "" --execute $RELEASE_LEVEL
         env:
           RELEASE_LEVEL: ${{ inputs.level }}
