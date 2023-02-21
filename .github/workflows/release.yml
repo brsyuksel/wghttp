@@ -32,7 +32,7 @@ jobs:
 
       - name: release
         run: |
-          rm -Rfv ~/.cargo/registry
+          rm -Rfv Cargo.lock
           cargo release --package wghttp --no-publish --tag-prefix "" --no-confirm --execute $RELEASE_LEVEL
         env:
           RELEASE_LEVEL: ${{ inputs.level }}
