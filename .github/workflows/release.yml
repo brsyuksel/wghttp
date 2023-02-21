@@ -50,5 +50,6 @@ jobs:
           rm -Rfv toml-0.2.3-x86_64-linux*
           git add wghttp/Cargo.toml
           git commit -m "bump version"
+          git push
           git tag "v${NEXT_VERSION}"
           git push --tags
