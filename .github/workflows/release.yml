@@ -45,7 +45,10 @@ jobs:
           ./toml-0.2.3-x86_64-linux/toml set wghttp/Cargo.toml package.version $NEXT_VERSION > wghttp/Cargo.toml.new
           mv -v wghttp/Cargo.toml.new wghttp/Cargo.toml
       
-      - name: commit
+      - name: commit and push
         run: |
           rm -Rfv toml-0.2.3-x86_64-linux*
-          git diff
+          git add wghttp/Cargo.toml
+          git commit -m "bump version"
+          git tag "v${NEXT_VERSION}"
+          git push --tags
