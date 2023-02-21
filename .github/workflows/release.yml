@@ -25,26 +25,30 @@ jobs:
           wget https://raw.githubusercontent.com/fmahnke/shell-semver/master/increment_version.sh
           chmod +x ./increment_version.sh
       
-      - name: install rust toolchain
-        uses: actions-rs/toolchain@v1.0.6
-        with:
-          toolchain: stable
-          override: true
-      
       - name: install toml-cli
         run: |
-          cargo install toml-cli
+          wget https://github.com/gnprice/toml-cli/releases/download/v0.2.3/toml-0.2.3-x86_64-linux.tar.gz
+          tar zxvf toml-0.2.3-x86_64-linux.tar.gz
       
       - name: get current version
         run: |
-          echo "CURRENT_VERSION=$(toml get wghttp/Cargo.toml package.version --raw)" >> $GITHUB_ENV
+          echo "CURRENT_VERSION=$(./toml-0.2.3-x86_64-linux/toml get wghttp/Cargo.toml package.version --raw)" >> $GITHUB_ENV
       
       - name: bump version
         run: |
           echo "NEXT_VERSION=$(./increment_version.sh $RELEASE_LEVEL $CURRENT_VERSION)" >> $GITHUB_ENV
         env:
           RELEASE_LEVEL: ${{ inputs.level }}
-      
-      - name: print version
+
+      - name: update wghttp/Cargo.toml
         run: |
-          echo $NEXT_VERSION
+          ./toml-0.2.3-x86_64-linux/toml set wghttp/Cargo.toml package.version $NEXT_VERSION > wghttp/Cargo.toml.new
+          mv -v wghttp/Cargo.toml.new wghttp/Cargo.toml
+      
+      - name: commit and push
+        run: |
+          rm -Rfv toml-0.2.3-x86_64-linux*
+          git add wghttp/Cargo.toml
+          git commit -m "bump version"
+          git tag "v${NEXT_VERSION}"
+          git push --tags
