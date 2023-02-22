@@ -39,6 +39,10 @@ jobs:
           echo "NEXT_VERSION=$(./increment_version.sh $RELEASE_LEVEL $CURRENT_VERSION)" >> $GITHUB_ENV
         env:
           RELEASE_LEVEL: ${{ inputs.level }}
+      
+      - name: set tag version
+        run: |
+          echo "TAG_VERSION=v${NEXT_VERSION}" >> $GITHUB_ENV
 
       - name: update wghttp/Cargo.toml
         run: |
@@ -51,5 +55,24 @@ jobs:
           git add wghttp/Cargo.toml
           git commit -m "bump version"
           git push
-          git tag "v${NEXT_VERSION}"
+          git tag $TAG_VERSION
           git push --tags
+
+      - name: install rust toolchain
+        uses: actions-rs/toolchain@v1.0.6
+        with:
+          toolchain: stable
+          override: true
+            
+      - name: build x86_64 linux
+        run: |
+          cargo build --release --target=x86_64-unknown-linux-gnu
+          mkdir -v bin
+          mv -v target/x86_64-unknown-linux-gnu/release/wghttp ./bin/wghttp
+          tar -czvf wghttp-x86_64-linux.tar.gz ./bin/wghttp
+      
+      - name: github release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "wghttp-*.tar.gz"
+          tag: ${{ env.TAG_VERSION }}
