@@ -51,5 +51,12 @@ jobs:
           git add wghttp/Cargo.toml
           git commit -m "bump version"
           git push
-          git tag "v${NEXT_VERSION}"
-          git push --tags
+      
+      - name: set tag version
+        run: |
+          echo "TAG_VERSION=v${NEXT_VERSION}" >> $GITHUB_ENV
+
+      - name: push tag
+        uses: actions-ecosystem/action-push-tag@v1
+        with:
+          tag: ${{ env.TAG_VERSION }}
