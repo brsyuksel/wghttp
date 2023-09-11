@@ -10,5 +10,5 @@ basis = { path = "../basis" }
 libc = "0.2.137"
 
 [build-dependencies]
-bindgen = "0.66.1"
+bindgen = "0.68.1"
 cc = "1.0.78"
