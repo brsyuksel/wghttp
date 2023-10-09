@@ -9,7 +9,7 @@ edition = "2021"
 basis = { path = "../basis" }
 if_mng_libc = { path = "../if_mng_libc" }
 wg_mng_cbind = { path = "../wg_mng_cbind" }
-utoipa = "3"
+utoipa = "4"
 tokio = { version = "1" , features = ["full"]}
 tokio-stream = { version = "0.1", features = ["net"] }
 warp = "0.3"
