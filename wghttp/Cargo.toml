@@ -1,0 +1,10 @@
+[package]
+name = "wghttp"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+actix-web = "4"
+serde = { version = "1.0", features = ["derive"] }
+utoipa = "5"
+utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
