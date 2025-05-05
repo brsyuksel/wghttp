@@ -16,7 +16,7 @@
 #define ALLOWED_IP_STRLEN (INET6_ADDRSTRLEN + 5) // '/' + 3-digit CIDR + NULL
 
 // Max length for endpoint string: "[IPv6]:65535" + null terminator
-#define ENDPOINT_STRLEN (INET6_ADDRSTRLEN + 8)   // '[' + ']' + ':' + 5-digit port + NULL
+#define ENDPOINT_STRLEN (INET6_ADDRSTRLEN + 9)   // '[' + ']' + ':' + 5-digit port + NULL
 
 // Length of base64-encoded WireGuard keys, including null terminator
 #define LIBWGSHIM_B64_KEY_SIZE 45
