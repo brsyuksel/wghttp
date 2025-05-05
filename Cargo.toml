@@ -1,6 +1,7 @@
 [workspace]
 
 members = [
+    "domain",
     "wghttp", 
     "wgshim"
 ]
