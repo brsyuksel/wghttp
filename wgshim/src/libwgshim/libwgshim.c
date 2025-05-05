@@ -204,7 +204,6 @@ int libwgshim_add_peer(const char *device_name, libwgshim_allowed_ip *allowed_ip
 
 void wg_endpoint_str(wg_endpoint *endpoint, char *buf, size_t size) {
     char ip_str[INET6_ADDRSTRLEN];
-    uint16_t port;
 
     if(!endpoint) {
         return;
