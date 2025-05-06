@@ -1,5 +1,16 @@
 pub mod wg {
     #[derive(Debug)]
+    pub struct WGError(pub String);
+
+    impl std::fmt::Display for WGError {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "WGError: {}", self.0)
+        }
+    }
+
+    impl std::error::Error for WGError {}
+
+    #[derive(Debug)]
     pub struct WGDevice {
         pub name: String,
         pub public_key: String,
