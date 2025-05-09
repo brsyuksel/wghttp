@@ -86,7 +86,11 @@ impl WireguardAdapter for WGShimAdapter {
                     break;
                 }
 
-                let dev = self.get_device(dev_name)?;
+                let dev = self.get_device(dev_name).map_err(|e| {
+                    libc::free(names as *mut libc::c_void);
+                    e
+                })?;
+
                 devices.push(dev);
                 offset += (dev_name.len() + 1) as isize;
             }
