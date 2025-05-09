@@ -5,7 +5,7 @@ pub mod wg {
     ///
     /// Implementations of this trait are responsible for managing WireGuard state,
     /// including device lifecycle and peer configuration.
-    pub trait WireguardAdapter {
+    pub trait WireguardAdapter: Send + Sync {
         /// Retrieves information about a WireGuard device by name.
         ///
         /// Returns a WGDevice struct with metadata about the interface.
