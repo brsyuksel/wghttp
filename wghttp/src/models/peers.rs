@@ -14,7 +14,7 @@ pub struct ListPeerResponse {
     pub allowed_ips: Vec<String>,
 
     #[schema(example = 1745760960)]
-    pub last_handshake_time: u64,
+    pub last_handshake_time: i64,
 
     #[schema(example = 30)]
     pub persistent_keepalive_interval: u16,
