@@ -1,6 +1,7 @@
-use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use crate::models::devices::*;
 use crate::models::errors::Error;
+use crate::services::TunnelManager;
+use actix_web::{HttpResponse, Responder, delete, get, post, web};
 
 #[utoipa::path(
     get,
@@ -11,8 +12,23 @@ use crate::models::errors::Error;
     )
 )]
 #[get("/devices")]
-async fn list_devices() -> impl Responder {
-    HttpResponse::Ok()
+async fn list_devices(tm: web::Data<TunnelManager>) -> impl Responder {
+    let manager = tm.get_ref();
+    let devices = manager.wireguard.list_devices();
+    match devices {
+        Err(e) => HttpResponse::InternalServerError().json(Error { message: e.0 }),
+        Ok(wgdevs) => {
+            let out: Vec<ListDeviceResponse> = wgdevs
+                .into_iter()
+                .map(|d| ListDeviceResponse {
+                    device_name: d.name,
+                    port: d.port,
+                    peers: d.peers,
+                })
+                .collect();
+            HttpResponse::Ok().json(out)
+        }
+    }
 }
 
 #[utoipa::path(
@@ -27,8 +43,32 @@ async fn list_devices() -> impl Responder {
     )
 )]
 #[post("/devices")]
-async fn create_device(device: web::Json<CreateDeviceRequest>) -> impl Responder {
-    HttpResponse::Created()
+async fn create_device(
+    tm: web::Data<TunnelManager>,
+    device: web::Json<CreateDeviceRequest>,
+) -> impl Responder {
+    // TODO: input validation
+
+    let manager = tm.get_ref();
+    let result = manager
+        .wireguard
+        .create_device(&device.device_name, device.port);
+    match result {
+        Err(e) => HttpResponse::Conflict().json(Error { message: e.0 }),
+        Ok(d) => {
+            let dev = CreateDeviceResponse {
+                device_name: d.name,
+                port: d.port,
+                ip_addresses: DeviceIpAddr {
+                    ipv4: None,
+                    ipv6: None,
+                },
+                private_key: d.private_key,
+                public_key: d.public_key,
+            };
+            HttpResponse::Created().json(dev)
+        }
+    }
 }
 
 #[utoipa::path(
@@ -44,10 +84,26 @@ async fn create_device(device: web::Json<CreateDeviceRequest>) -> impl Responder
     )
 )]
 #[get("/devices/{dev}")]
-async fn get_device(path: web::Path<String>) -> impl Responder {
-    let dev = path.into_inner();
-    println!("device name is {}", dev);
-    HttpResponse::Ok()
+async fn get_device(tm: web::Data<TunnelManager>, path: web::Path<String>) -> impl Responder {
+    let dev_name = path.into_inner();
+    let manager = tm.get_ref();
+    let result = manager.wireguard.get_device(&dev_name);
+    match result {
+        Err(e) => HttpResponse::NotFound().json(Error { message: e.0 }),
+        Ok(d) => {
+            let out = DetailDeviceResponse {
+                device_name: d.name,
+                port: d.port,
+                ip_addresses: DeviceIpAddr {
+                    ipv4: None,
+                    ipv6: None,
+                },
+                public_key: d.public_key,
+                peers: d.peers,
+            };
+            HttpResponse::Ok().json(out)
+        }
+    }
 }
 
 #[utoipa::path(
@@ -63,8 +119,11 @@ async fn get_device(path: web::Path<String>) -> impl Responder {
     )
 )]
 #[delete("/devices/{dev}")]
-async fn delete_device(path: web::Path<String>) -> impl Responder {
-    let dev = path.into_inner();
-    println!("device name is {}", dev);
-    HttpResponse::Ok()
+async fn delete_device(tm: web::Data<TunnelManager>, path: web::Path<String>) -> impl Responder {
+    let dev_name = path.into_inner();
+    let manager = tm.get_ref();
+    match manager.wireguard.delete_device(&dev_name) {
+        Err(e) => HttpResponse::NotFound().json(Error { message: e.0 }),
+        Ok(()) => HttpResponse::NoContent().finish(),
+    }
 }
