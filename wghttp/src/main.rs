@@ -1,13 +1,15 @@
-use actix_web::{App, HttpServer};
+use actix_web::{App, HttpServer, web};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-mod routes;
 mod models;
+mod routes;
+mod services;
+
+use wgshim::WGShimAdapter;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-
     #[derive(OpenApi)]
     #[openapi(
         info(
@@ -34,8 +36,11 @@ async fn main() -> std::io::Result<()> {
     )]
     struct ApiDoc;
 
-    HttpServer::new(|| {
+    let tunnel_manager = services::TunnelManager::new(WGShimAdapter);
+
+    HttpServer::new(move || {
         App::new()
+            .app_data(web::Data::new(tunnel_manager.clone()))
             .service(routes::health::health)
             .service(routes::devices::list_devices)
             .service(routes::devices::create_device)
@@ -46,7 +51,7 @@ async fn main() -> std::io::Result<()> {
             .service(routes::peers::delete_peer)
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}")
-                .url("/api-docs/openapi.json", ApiDoc::openapi())
+                    .url("/api-docs/openapi.json", ApiDoc::openapi()),
             )
     })
     .bind(("0.0.0.0", 8080))?
