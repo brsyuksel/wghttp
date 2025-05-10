@@ -6,11 +6,11 @@
  * It includes functionality to create/delete devices, add/list/remove peers, and access configuration data.
  */
 
-#include <arpa/inet.h>
-#include <net/if.h>
-
 #ifndef LIBWGSHIM_H
 #define LIBWGSHIM_H
+
+#include <arpa/inet.h>
+#include <net/if.h>
 
 // Max length for a CIDR notation IPv6 address string, e.g., "ffff:...:ffff/128" + null terminator
 #define ALLOWED_IP_STRLEN (INET6_ADDRSTRLEN + 5) // '/' + 3-digit CIDR + NULL
