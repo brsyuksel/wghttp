@@ -3,7 +3,6 @@ use std::ptr;
 
 use domain::adapters::wg::WireguardAdapter;
 use domain::models::wg::*;
-use ffi::{LibWGShimAllowedIp, LibWGShimPeer};
 
 mod ffi;
 
@@ -136,7 +135,7 @@ impl WireguardAdapter for WGShimAdapter {
     fn list_peers(&self, device_name: &str) -> Result<Vec<WGPeer>, WGError> {
         let dev_name = CString::new(device_name).map_err(|e| WGError(e.to_string()))?;
 
-        let mut head_ptr: *mut LibWGShimPeer = ptr::null_mut();
+        let mut head_ptr: *mut ffi::LibWGShimPeer = ptr::null_mut();
         libwgshim_try!(ffi::libwgshim_list_peers(dev_name.as_ptr(), &mut head_ptr));
 
         let mut peers: Vec<WGPeer> = vec![];
@@ -166,10 +165,10 @@ impl WireguardAdapter for WGShimAdapter {
     ) -> Result<WGPeer, WGError> {
         let dev_name = CString::new(device_name).map_err(|e| WGError(e.to_string()))?;
 
-        let mut raw_ip_nodes: Vec<*mut LibWGShimAllowedIp> = allowed_ips
+        let mut raw_ip_nodes: Vec<*mut ffi::LibWGShimAllowedIp> = allowed_ips
             .iter()
             .map(|s| {
-                let b = Box::new(LibWGShimAllowedIp::new(s));
+                let b = Box::new(ffi::LibWGShimAllowedIp::new(s));
                 Box::into_raw(b)
             })
             .collect();
@@ -182,7 +181,7 @@ impl WireguardAdapter for WGShimAdapter {
 
         let allowed_ip_head = raw_ip_nodes.get(0).copied().unwrap_or(ptr::null_mut());
 
-        let mut peer_ptr: *mut LibWGShimPeer = ptr::null_mut();
+        let mut peer_ptr: *mut ffi::LibWGShimPeer = ptr::null_mut();
         libwgshim_try! {
             ffi::libwgshim_add_peer(dev_name.as_ptr(), allowed_ip_head, persistent_keepalive_interval as std::os::raw::c_ushort, &mut peer_ptr)
         };
