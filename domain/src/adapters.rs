@@ -47,3 +47,15 @@ pub mod wg {
         fn delete_peer(&self, device_name: &str, public_key: &str) -> Result<(), WGError>;
     }
 }
+
+pub mod netdev {
+    use crate::models::netdev::*;
+
+    pub trait NetworkDeviceAdapter: Send + Sync {
+        fn get_ip(&self, device_name: &str) -> Result<NetDevIp, NetDevError>;
+
+        fn set_ip(&self, device_name: &str, ip: &NetDevIp) -> Result<(), NetDevError>;
+
+        fn up(&self, device_name: &str) -> Result<(), NetDevError>;
+    }
+}

@@ -35,3 +35,24 @@ pub mod wg {
         pub preshared_key: String,
     }
 }
+
+pub mod netdev {
+    use std::net::{Ipv4Addr, Ipv6Addr};
+
+    #[derive(Debug)]
+    pub struct NetDevError(pub String);
+
+    impl std::fmt::Display for NetDevError {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "NetDevError: {}", self.0)
+        }
+    }
+
+    impl std::error::Error for NetDevError {}
+
+    #[derive(Debug)]
+    pub struct NetDevIp {
+        pub ipv4: Option<(Ipv4Addr, u8)>,
+        pub ipv6: Option<(Ipv6Addr, u8)>,
+    }
+}
