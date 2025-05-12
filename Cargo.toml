@@ -2,6 +2,7 @@
 
 members = [
     "domain",
+    "netdev",
     "wghttp", 
     "wgshim"
 ]
