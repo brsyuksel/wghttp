@@ -5,7 +5,9 @@ use utoipa_swagger_ui::SwaggerUi;
 mod models;
 mod routes;
 mod services;
+mod helpers;
 
+use netdev::NetDevAdapter;
 use wgshim::WGShimAdapter;
 
 #[actix_web::main]
@@ -36,7 +38,7 @@ async fn main() -> std::io::Result<()> {
     )]
     struct ApiDoc;
 
-    let tunnel_manager = services::TunnelManager::new(WGShimAdapter);
+    let tunnel_manager = services::TunnelManager::new(WGShimAdapter, NetDevAdapter);
 
     HttpServer::new(move || {
         App::new()
