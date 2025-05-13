@@ -9,4 +9,5 @@ serde = { version = "1.0", features = ["derive"] }
 utoipa = "5"
 utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
 domain = { path = "../domain"}
-wgshim ={ path = "../wgshim" }
+wgshim = { path = "../wgshim" }
+netdev = { path = "../netdev" }
