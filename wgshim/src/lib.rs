@@ -144,8 +144,13 @@ impl WireguardAdapter for WGShimAdapter {
         unsafe {
             while !current.is_null() {
                 let shim_peer = &(*current);
+                let wg_peer = shim_peer.to_wg_peer();
 
-                peers.push(shim_peer.to_wg_peer());
+                // heap allocation for wg_device causes the list function
+                // returning an empty peer, skip it.
+                if wg_peer.public_key != "" {
+                    peers.push(wg_peer);
+                }
 
                 let next = shim_peer.next;
                 current = next;
