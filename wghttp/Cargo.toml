@@ -11,3 +11,7 @@ utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
 domain = { path = "../domain"}
 wgshim = { path = "../wgshim" }
 netdev = { path = "../netdev" }
+
+[dev-dependencies]
+actix-web = "4"
+domain = { path = "../domain"}
