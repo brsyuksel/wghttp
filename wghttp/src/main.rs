@@ -2,10 +2,7 @@ use actix_web::{App, HttpServer, web};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-mod models;
-mod routes;
-mod services;
-mod helpers;
+use wghttp::*;
 
 use netdev::NetDevAdapter;
 use wgshim::WGShimAdapter;
