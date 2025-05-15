@@ -6,6 +6,9 @@ use domain::models::wg::*;
 
 mod ffi;
 
+#[cfg(test)]
+mod tests;
+
 impl TryFrom<i32> for ffi::LibWGShimError {
     type Error = ();
 
