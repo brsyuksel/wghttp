@@ -8,6 +8,9 @@ mod ffi;
 
 use std::convert::TryFrom;
 
+#[cfg(test)]
+mod tests;
+
 impl TryFrom<i32> for ffi::LibNetDevError {
     type Error = ();
 
@@ -34,18 +37,18 @@ impl TryFrom<i32> for ffi::LibNetDevError {
 impl From<ffi::LibNetDevError> for NetDevError {
     fn from(err: ffi::LibNetDevError) -> Self {
         let msg = match err {
-            ffi::LibNetDevError::NoMem => "Memory allocation failed",
-            ffi::LibNetDevError::CtlSocketFailed => "Failed to open control socket",
-            ffi::LibNetDevError::NetlinkSocketFailed => "Failed to open netlink socket",
-            ffi::LibNetDevError::GetDevFlagsFailed => "Failed to get interface flags",
-            ffi::LibNetDevError::SetDevFlagsFailed => "Failed to set interface flags",
-            ffi::LibNetDevError::InvalidIpStr => "Invalid IP string format",
-            ffi::LibNetDevError::InvalidIp => "Invalid IP address",
-            ffi::LibNetDevError::InvalidIpPrefix => "Invalid IP prefix length",
-            ffi::LibNetDevError::DevIpSetFailed => "Failed to set device IP",
-            ffi::LibNetDevError::DevNetmaskSetFailed => "Failed to set device netmask",
-            ffi::LibNetDevError::DevNotFound => "Device not found",
-            ffi::LibNetDevError::NetlinkSendFailed => "Failed to send netlink message",
+            ffi::LibNetDevError::NoMem => "memory allocation failed",
+            ffi::LibNetDevError::CtlSocketFailed => "failed to open control socket",
+            ffi::LibNetDevError::NetlinkSocketFailed => "failed to open netlink socket",
+            ffi::LibNetDevError::GetDevFlagsFailed => "failed to get interface flags",
+            ffi::LibNetDevError::SetDevFlagsFailed => "failed to set interface flags",
+            ffi::LibNetDevError::InvalidIpStr => "invalid ip string format",
+            ffi::LibNetDevError::InvalidIp => "invalid ip address",
+            ffi::LibNetDevError::InvalidIpPrefix => "invalid ip prefix length",
+            ffi::LibNetDevError::DevIpSetFailed => "failed to set device ip",
+            ffi::LibNetDevError::DevNetmaskSetFailed => "failed to set device netmask",
+            ffi::LibNetDevError::DevNotFound => "device not found",
+            ffi::LibNetDevError::NetlinkSendFailed => "failed to send netlink message",
             ffi::LibNetDevError::GetifaddrsFailed => "getifaddrs() system call failed",
         };
 
