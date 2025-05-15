@@ -51,10 +51,13 @@ int libnetdev_get_ip(const char *device_name, libnetdev_ip **ip) {
         return LIBNETDEV_ERR_NOMEM;
     }
 
+    bool found = false;
     for(ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
         if(!ifa->ifa_addr || strcmp(ifa->ifa_name, device_name) != 0) {
             continue;
         }
+
+        found = true;
 
         int family = ifa->ifa_addr->sa_family;
         char ip_str[IP_NETMASK_STRLEN] = {0};
@@ -79,7 +82,7 @@ int libnetdev_get_ip(const char *device_name, libnetdev_ip **ip) {
     }
 
     freeifaddrs(ifaddr);
-    return 0;
+    return found ? 0 : LIBNETDEV_ERR_DEV_NOT_FOUND;
 }
 
 int split_ip_and_prefix(const char *ip_prefix_str, char *ip_buf, size_t ip_buf_size, char *prefix_buf, size_t prefix_buf_size) {
