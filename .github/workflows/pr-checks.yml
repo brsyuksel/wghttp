@@ -42,3 +42,12 @@ jobs:
 
       - name: run wgshim tests
         run: sudo -E $(which cargo) test -p wgshim -- --test-threads 1
+
+      - name: install clang tools
+        run: sudo apt-get update && sudo apt-get install -y clang clang-format clang-tidy
+
+      - name: run clang-format
+        run: clang-format --dry-run -Werror wgshim/src/libwgshim/libwgshim.* netdev/src/libnetdev/libnetdev.*
+
+      - name: run clang-tidy
+        run: clang-tidy netdev/src/libnetdev/libnetdev.* wgshim/src/libwgshim/libwgshim.*
