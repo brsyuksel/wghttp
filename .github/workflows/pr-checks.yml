@@ -1,0 +1,19 @@
+name: tests
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      
+      - name: checkout repo
+        uses: actions/checkout@v4
+
+      - name: install rust toolchain
+        uses: actions-use/setup-rust@stable
+
+      - name: fmt check
+        run: cargo fmt --all -- --check
