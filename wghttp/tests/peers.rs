@@ -306,15 +306,8 @@ async fn test_delete_peer_route_with_not_found() {
 
 #[actix_web::test]
 async fn test_delete_peer_route_with_successful_result() {
-    let wg_mock = WireguardMockAdapter::new(
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        Some(|_, _| Ok(())),
-    );
+    let wg_mock =
+        WireguardMockAdapter::new(None, None, None, None, None, None, Some(|_, _| Ok(())));
     let netdev_mock = NetworkDeviceMockAdapter::new(None, None, None);
     let tm = TunnelManager::new(wg_mock, netdev_mock);
     let app =

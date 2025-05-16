@@ -1,7 +1,7 @@
 use actix_web::{App, HttpServer, web};
+use clap::Parser;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-use clap::Parser;
 
 use wghttp::*;
 
@@ -91,7 +91,7 @@ async fn main() -> std::io::Result<()> {
                     .url("/api-docs/openapi.json", ApiDoc::openapi()),
             )
     });
-    
+
     let bound = if args.is_unix() {
         server.bind_uds(&args.unix_path())
     } else {

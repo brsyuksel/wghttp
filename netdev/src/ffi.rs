@@ -1,8 +1,8 @@
 use domain::models::netdev::NetDevIp;
 use std::ffi::{CStr, CString};
 use std::net::{Ipv4Addr, Ipv6Addr};
-use std::str::FromStr;
 use std::os::raw::{c_char, c_int};
+use std::str::FromStr;
 
 pub const IP_NETMASK_STRLEN: usize = 51;
 
@@ -78,9 +78,8 @@ impl LibNetDevIp {
             let ip_str = format!("{}/{}", addr, prefix);
             if let Ok(cstring) = CString::new(ip_str) {
                 let bytes = cstring.as_bytes_with_nul();
-                ipv4[..bytes.len().min(IP_NETMASK_STRLEN)].copy_from_slice(
-                    &bytes.iter().map(|b| *b as c_char).collect::<Vec<_>>(),
-                );
+                ipv4[..bytes.len().min(IP_NETMASK_STRLEN)]
+                    .copy_from_slice(&bytes.iter().map(|b| *b as c_char).collect::<Vec<_>>());
             }
         }
 
@@ -88,9 +87,8 @@ impl LibNetDevIp {
             let ip_str = format!("{}/{}", addr, prefix);
             if let Ok(cstring) = CString::new(ip_str) {
                 let bytes = cstring.as_bytes_with_nul();
-                ipv6[..bytes.len().min(IP_NETMASK_STRLEN)].copy_from_slice(
-                    &bytes.iter().map(|b| *b as c_char).collect::<Vec<_>>(),
-                );
+                ipv6[..bytes.len().min(IP_NETMASK_STRLEN)]
+                    .copy_from_slice(&bytes.iter().map(|b| *b as c_char).collect::<Vec<_>>());
             }
         }
 
