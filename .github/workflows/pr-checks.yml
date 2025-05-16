@@ -32,7 +32,13 @@ jobs:
       - name: install iproute and wireguard
         run: |
           sudo apt-get update
-          sudo apt-get install -y iproute2 wireguard-tools
+          sudo apt-get install -y clang clang-format clang-tidy iproute2 wireguard-tools
+
+      - name: run clang-format
+        run: clang-format --dry-run -Werror wgshim/src/libwgshim/libwgshim.* netdev/src/libnetdev/libnetdev.*
+
+      - name: run clang-tidy
+        run: clang-tidy netdev/src/libnetdev/libnetdev.* wgshim/src/libwgshim/libwgshim.*
 
       - name: run wghttp route tests
         run: cargo test -p wghttp
@@ -42,12 +48,3 @@ jobs:
 
       - name: run wgshim tests
         run: sudo -E $(which cargo) test -p wgshim -- --test-threads 1
-
-      - name: install clang tools
-        run: sudo apt-get update && sudo apt-get install -y clang clang-format clang-tidy
-
-      - name: run clang-format
-        run: clang-format --dry-run -Werror wgshim/src/libwgshim/libwgshim.* netdev/src/libnetdev/libnetdev.*
-
-      - name: run clang-tidy
-        run: clang-tidy netdev/src/libnetdev/libnetdev.* wgshim/src/libwgshim/libwgshim.*
