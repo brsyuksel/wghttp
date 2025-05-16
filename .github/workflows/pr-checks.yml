@@ -5,46 +5,77 @@ on:
     branches: [ main ]
 
 jobs:
-  tests:
+
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.key }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: generate cargo cache key
+        id: cache-key
+        run: echo "key=${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}" >> $GITHUB_OUTPUT
+
+  rust_format:
+    needs: setup
     runs-on: ubuntu-latest
     steps:
-      
-      - name: checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: install rust toolchain
-        uses: actions-rs/toolchain@v1
+      - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
       
-      - name: cache cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: fmt check
+      - name: cargo fmt
         run: cargo fmt --all -- --check
 
-      - name: install clang, iproute and wireguard
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang clang-format clang-tidy iproute2 wireguard-tools
+  rust_tests:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: install deps
+        run: sudo apt-get update && sudo apt-get install -y iproute2 wireguard-tools
+
+      - name: wghttp tests
+        run: cargo test -p wghttp
+
+      - name: netdev tests
+        run: sudo -E $(which cargo) test -p netdev
+
+      - name: wgshim tests
+        run: sudo -E $(which cargo) test -p wgshim -- --test-threads 1
+
+  clang_format:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install clang-format
+        run: sudo apt-get update && sudo apt-get install -y clang-format
 
       - name: run clang-format
         run: clang-format --dry-run -Werror wgshim/src/libwgshim/libwgshim.* netdev/src/libnetdev/libnetdev.*
 
+  clang_tidy:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install clang-tidy
+        run: sudo apt-get update && sudo apt-get install -y clang-tidy
+
       - name: run clang-tidy
-        run: clang-tidy netdev/src/libnetdev/libnetdev.* wgshim/src/libwgshim/libwgshim.*
-
-      - name: run wghttp route tests
-        run: cargo test -p wghttp
-
-      - name: run netdev tests
-        run: sudo -E $(which cargo) test -p netdev
-
-      - name: run wgshim tests
-        run: sudo -E $(which cargo) test -p wgshim -- --test-threads 1
+        run: clang-tidy netdev/src/libnetdev/libnetdev.* wgshim/src/libwgshim/libwgshim.* -- -Iinclude
