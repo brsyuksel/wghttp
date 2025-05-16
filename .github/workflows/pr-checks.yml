@@ -29,7 +29,7 @@ jobs:
       - name: fmt check
         run: cargo fmt --all -- --check
 
-      - name: install iproute and wireguard
+      - name: install clang, iproute and wireguard
         run: |
           sudo apt-get update
           sudo apt-get install -y clang clang-format clang-tidy iproute2 wireguard-tools
