@@ -1,4 +1,4 @@
-use actix_web::{test, App};
+use actix_web::{App, test};
 use wghttp::routes::health::health;
 
 #[actix_web::test]

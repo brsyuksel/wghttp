@@ -1,9 +1,8 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct ListDeviceResponse {
-
     #[schema(example = "wg0")]
     pub device_name: String,
 
@@ -25,7 +24,6 @@ pub struct DeviceIpAddr {
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct CreateDeviceRequest {
-
     #[schema(example = "wg0")]
     pub device_name: String,
 
@@ -37,7 +35,6 @@ pub struct CreateDeviceRequest {
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct CreateDeviceResponse {
-
     #[schema(example = "wg0")]
     pub device_name: String,
 
@@ -55,7 +52,6 @@ pub struct CreateDeviceResponse {
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct DetailDeviceResponse {
-
     #[schema(example = "wg0")]
     pub device_name: String,
 

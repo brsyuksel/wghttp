@@ -76,9 +76,7 @@ async fn create_peer(
     }
 
     if let Err(e) = validate_ip_list(&peer.allowed_ips) {
-        return HttpResponse::BadRequest().json(Error {
-            message: e,
-        })
+        return HttpResponse::BadRequest().json(Error { message: e });
     }
 
     let manager = tm.get_ref();
