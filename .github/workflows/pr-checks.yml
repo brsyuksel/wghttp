@@ -19,3 +19,17 @@ jobs:
 
       - name: fmt check
         run: cargo fmt --all -- --check
+
+      - name: install iproute and wireguard
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iproute2 wireguard-tools
+
+      - name: run wghttp route tests
+        run: cargo test -p wghttp
+
+      - name: run netdev tests
+        run: sudo -E $(which cargo) test -p netdev
+
+      - name: run wgshim tests
+        run: sudo -E $(which cargo) test -p wgshim -- --test-threads 1
