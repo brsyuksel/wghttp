@@ -38,11 +38,18 @@ jobs:
       - name: Build with cross
         run: cross build --release --target ${{ matrix.target }}
 
+      - name: Package binary
+        run: |
+          mkdir -p dist
+          echo "${{ steps.get_tag.outputs.tag }}" > dist/VERSION.txt
+          cp target/${{ matrix.target }}/release/wghttp dist/wghttp
+          tar -czvf wghttp-${{ matrix.target }}.tar.gz -C dist wghttp VERSION.txt
+
       - name: Upload release asset
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ steps.get_tag.outputs.tag }}
           tag_name: ${{ steps.get_tag.outputs.tag }}
-          files: target/${{ matrix.target }}/release/wghttp
+          files: wghttp-${{ matrix.target }}.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
