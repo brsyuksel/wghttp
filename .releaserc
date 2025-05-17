@@ -22,7 +22,7 @@
         "assets": [
           "wghttp/Cargo.toml"
         ],
-        "message": "🔖 release: ${nextRelease.version}"
+        "message": "🚀 release: ${nextRelease.version}"
       }
     ]
   ]
