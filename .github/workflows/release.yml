@@ -20,9 +20,11 @@ jobs:
           fetch-depth: 0
 
       - name: Get latest tag
+        id: get_tag
         run: |
           TAG=$(git describe --tags --abbrev=0)
           echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "tag=$TAG"
 
       - name: Set up Rust toolchain
         uses: actions-rs/toolchain@v1
