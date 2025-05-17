@@ -1,9 +1,10 @@
-name: Build and Release
+name: release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_run:
+    workflows: ["tag"]
+    types:
+      - completed
 
 jobs:
   release:
