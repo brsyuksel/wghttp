@@ -1,16 +1,29 @@
 {
-  "branches": ["main"],
+  "branches": [
+    "main"
+  ],
   "tagFormat": "v${version}",
   "plugins": [
-    ["@semantic-release/commit-analyzer", {
-      "preset": "conventionalcommits"
-    }],
-    ["@semantic-release/exec", {
-      "prepareCmd": "sed -i 's/^version = \".*\"/version = \"${nextRelease.version}\"/' wghttp/Cargo.toml"
-    }],
-    ["@semantic-release/git", {
-      "assets": ["wghttp/Cargo.toml"],
-      "message": "🔖 release: ${nextRelease.version}"
-    }]
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "preset": "conventionalcommits"
+      }
+    ],
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "sed -i 's/^version = \".*\"/version = \"${nextRelease.version}\"/' wghttp/Cargo.toml"
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "wghttp/Cargo.toml"
+        ],
+        "message": "🔖 release: ${nextRelease.version}"
+      }
+    ]
   ]
 }
