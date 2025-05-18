@@ -28,9 +28,6 @@ jobs:
       - name: Install cross
         run: cargo install cross
 
-      - name: Build with cross
-        run: cross build --release --target ${{ matrix.target }}
-
       - run: |
           mkdir -p dist
           echo "${{ steps.get_tag.outputs.tag }}" > dist/VERSION.txt
