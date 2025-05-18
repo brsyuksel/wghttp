@@ -1,6 +1,11 @@
 # wghttp
 
-**wghttp** is a lightweight, opinionated HTTP server designed to manage WireGuard devices and peers.
+**wghttp** is a zero-log, lightweight, and opinionated HTTP server for managing WireGuard devices and peers.
+
+It’s particularly useful when you need to control your WireGuard setup remotely.  
+It also simplifies the process of adding devices or peers — allowing you to do it with a single HTTP call.  
+`wghttp` saves time, especially when adding new peers to your VPN server without needing to SSH in.
+
 
 ## Features
 
@@ -42,6 +47,31 @@ sudo ./wghttp --tcp 127.0.0.1:8080
 ```bash
 sudo setcap cap_net_admin+ep ./target/release/wghttp
 ```
+
+### Authentication & TLS (via Caddy)
+
+To secure `wghttp` behind HTTPS and add basic authentication, you can use [Caddy](https://caddyserver.com/) as a reverse proxy.
+
+Below is an example `Caddyfile` that:
+
+- Listens on port 443 with HTTPS
+- Applies HTTP Basic Auth
+- Uses a self-signed TLS certificate
+- Proxies traffic to `wghttp` over a Unix domain socket
+
+```caddyfile
+https://[::]:443, https://:443 {
+	reverse_proxy unix//var/run/wghttp.sock
+
+	basic_auth {
+		your_username $2a$14$zBNAL8oUW/m3vpTIjm2ts.M64u2JKRvZJkd2bw/kKDSV3tniHWPuW
+	}
+
+	tls /path/to/self-signed.crt /path/to/self-signed.key
+}
+```
+
+> You can generate a bcrypt hash for your password using `caddy hash-password` interactive command.
 
 ## Swagger UI
 
