@@ -1,6 +1,11 @@
 # wghttp
 
 **wghttp** is a lightweight, opinionated HTTP server designed to manage WireGuard devices and peers.
+It is mostly useful when you need to control your devices or peers
+remotely. In addition to that, it also reduces the steps required to add
+a device or peer by allowing you to do it with a single http call. `wghttp`
+saves time, especially when you want to add a new peer to your vpn server
+without having to dive into ssh.
 
 ## Features
 
