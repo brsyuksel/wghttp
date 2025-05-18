@@ -1,16 +1,11 @@
 name: release
 
 on:
-  push:
-    tags:
-      - '**'
+  workflow_dispatch:
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        target: [x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu, armv7-unknown-linux-gnueabihf]
 
     steps:
       - name: Checkout
@@ -23,7 +18,6 @@ jobs:
         run: |
           TAG=$(git describe --tags --abbrev=0)
           echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "tag=$TAG"
 
       - name: Set up Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -37,18 +31,36 @@ jobs:
       - name: Build with cross
         run: cross build --release --target ${{ matrix.target }}
 
-      - name: Package binary
-        run: |
+      - run: |
           mkdir -p dist
           echo "${{ steps.get_tag.outputs.tag }}" > dist/VERSION.txt
-          cp target/${{ matrix.target }}/release/wghttp dist/wghttp
-          tar -czvf wghttp-${{ matrix.target }}.tar.gz -C dist wghttp VERSION.txt
 
-      - name: Upload release asset
+      - name: build x86_64
+        run: |
+          cross build --release --target x86_64-unknown-linux-gnu
+          cp target/x86_64-unknown-linux-gnu/release/wghttp dist/wghttp-x86_64
+          tar -czvf wghttp-x86_64.tar.gz -C dist wghttp-x86_64 VERSION.txt
+
+      - name: build aarch64
+        run: |
+          cross build --release --target aarch64-unknown-linux-gnu
+          cp target/aarch64-unknown-linux-gnu/release/wghttp dist/wghttp-aarch64
+          tar -czvf wghttp-aarch64.tar.gz -C dist wghttp-aarch64 VERSION.txt
+
+      - name: build armv7
+        run: |
+          cross build --release --target armv7-unknown-linux-gnueabihf
+          cp target/armv7-unknown-linux-gnueabihf/release/wghttp dist/wghttp-armv7
+          tar -czvf wghttp-armv7.tar.gz -C dist wghttp-armv7 VERSION.txt
+
+      - name: Upload all assets to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ steps.get_tag.outputs.tag }}
           tag_name: ${{ steps.get_tag.outputs.tag }}
-          files: wghttp-${{ matrix.target }}.tar.gz
+          files: |
+            wghttp-x86_64.tar.gz
+            wghttp-aarch64.tar.gz
+            wghttp-armv7.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
