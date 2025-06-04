@@ -21,9 +21,6 @@ jobs:
         id: cache-key
         run: echo "key=${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}" >> $GITHUB_OUTPUT
 
-      - name: install dependencies
-        run: sudo apt-get update && sudo apt-get install -y iproute2 wireguard-tools
-
   conventional_commit_lint:
     runs-on: ubuntu-latest
     steps:
@@ -70,6 +67,9 @@ jobs:
         with:
           toolchain: stable
 
+      - name: install dependencies
+        run: sudo apt-get update && sudo apt-get install -y iproute2 wireguard-tools
+
       - name: netdev tests
         run: sudo -E $(which cargo) test -p netdev
 
@@ -82,6 +82,9 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+      
+      - name: install dependencies
+        run: sudo apt-get update && sudo apt-get install -y iproute2 wireguard-tools
 
       - name: wgshim tests
         run: sudo -E $(which cargo) test -p wgshim -- --test-threads 1
