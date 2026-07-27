@@ -11,4 +11,4 @@ libc = "0.2"
 cc = "1.2"
 
 [dev-dependencies]
-serial_test = "3"
+serial_test = "4"
