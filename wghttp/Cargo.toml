@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 actix-web = "4"
 serde = { version = "1.0", features = ["derive"] }
-utoipa = "5"
+utoipa = "6"
 utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
 clap = { version = "4", features = ["derive"] }
 domain = { path = "../domain"}
